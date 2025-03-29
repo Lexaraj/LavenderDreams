@@ -168,8 +168,8 @@ struct boss_onyxiaAI : public ScriptedAI
         m_uiKnockAwayTimer     = urand(15000, 25000);
         m_uiTailSweepTimer     = 5000;
 
-        m_uiFireballTimer      = 3000;
-        m_uiMovementTimer      = 20000;
+        m_uiFireballTimer      = 10000;
+        m_uiMovementTimer      = 30000;
         m_uiMovePoint          = 7; // set North as the initial Phase 2 waypoint
         m_pPointData           = GetMoveData();
         m_uiDeepBreathTimer    = 0;
@@ -178,7 +178,7 @@ struct boss_onyxiaAI : public ScriptedAI
         m_uiSummonWhelpsTimer  = 5000;
         m_uiWhelpTimer         = 1000;
         m_uiSummonCount        = 0;
-        m_uiWhelpsToSummon     = 16;
+        m_uiWhelpsToSummon     = 4;
         m_bIsSummoningWhelps   = false;
 
         m_uiBellowingRoarTimer = 10000;
@@ -424,12 +424,12 @@ struct boss_onyxiaAI : public ScriptedAI
     {
         if (m_uiMovementTimer < uiDiff)
         {
-            m_uiMovementTimer = urand(15000, 25000);
-            m_uiFireballTimer = 5000;
+            m_uiMovementTimer = urand(25000, 35000);
+            m_uiFireballTimer = 7000;
             if (DoMovement())
             {
                 // casting Deep Breath
-                m_uiMovementTimer = urand(20000, 25000);
+                m_uiMovementTimer = urand(30000, 35000);
                 m_uiFireballTimer = 10000;
             }
         }
@@ -462,7 +462,7 @@ struct boss_onyxiaAI : public ScriptedAI
                     {
                         if (m_creature->GetThreatManager().getThreat(pTarget))
                             m_creature->GetThreatManager().modifyThreatPercent(pTarget, -100);
-                        m_uiFireballTimer = 3000;
+                        m_uiFireballTimer = 10000;
                     }
                 }
             }
@@ -478,7 +478,7 @@ struct boss_onyxiaAI : public ScriptedAI
                 {
                     m_creature->SummonCreature(NPC_ONYXIAN_WHELP, afSpawnLocations[0][0], afSpawnLocations[0][1], afSpawnLocations[0][2], 0.0f, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 300000);
                     m_creature->SummonCreature(NPC_ONYXIAN_WHELP, afSpawnLocations[1][0], afSpawnLocations[1][1], afSpawnLocations[1][2], 0.0f, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 300000);
-                    m_uiWhelpTimer = 1000;
+                    m_uiWhelpTimer = 15000;
                 }
                 else
                     m_uiWhelpTimer -= uiDiff;
@@ -487,7 +487,7 @@ struct boss_onyxiaAI : public ScriptedAI
             {
                 m_bIsSummoningWhelps = false;
                 m_uiSummonCount = 0;
-                m_uiWhelpsToSummon = 5 + urand(0, 2);
+                m_uiWhelpsToSummon = 4;
                 m_uiSummonWhelpsTimer = 30000;
             }
         }
@@ -541,7 +541,7 @@ struct boss_onyxiaAI : public ScriptedAI
         {
             if (DoCastSpellIfCan(m_creature, SPELL_BELLOWINGROAR, true) == CAST_OK)
             {
-                m_uiBellowingRoarTimer = urand(15000, 30000);
+                m_uiBellowingRoarTimer = urand(30000, 40000);
                 // Do not be interrupted by other casts.
                 DelayCastEvents(2000);
             }
@@ -556,7 +556,7 @@ struct boss_onyxiaAI : public ScriptedAI
                 case 0: m_creature->SummonCreature(NPC_ONYXIAN_WHELP, afSpawnLocations[0][0], afSpawnLocations[0][1], afSpawnLocations[0][2], 0.0f, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 120000); break;
                 case 1: m_creature->SummonCreature(NPC_ONYXIAN_WHELP, afSpawnLocations[1][0], afSpawnLocations[1][1], afSpawnLocations[1][2], 0.0f, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 120000); break;
             }
-            m_uiSummonWhelpsTimer = urand(1000, 10000);
+            m_uiSummonWhelpsTimer = urand(15000, 35000);
         }
         else
             m_uiSummonWhelpsTimer -= uiDiff;

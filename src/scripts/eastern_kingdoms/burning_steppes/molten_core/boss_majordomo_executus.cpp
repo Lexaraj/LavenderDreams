@@ -69,16 +69,12 @@ struct sSpawnLocation
     float m_fX, m_fY, m_fZ, m_fO;
 };
 
-static sSpawnLocation m_aBosspawnLocs[8] =
+static sSpawnLocation m_aBosspawnLocs[4] =
 {
-    {NPC_FLAMEWAKER_ELITE,  737.945f, -1156.48f, -118.945f, 4.46804f},
     {NPC_FLAMEWAKER_ELITE,  752.520f, -1191.02f, -118.218f, 2.49582f},
     {NPC_FLAMEWAKER_ELITE,  752.953f, -1163.94f, -118.869f, 3.70010f},
-    {NPC_FLAMEWAKER_ELITE,  738.814f, -1197.40f, -118.018f, 1.83260f},
     {NPC_FLAMEWAKER_HEALER, 746.939f, -1194.87f, -118.016f, 2.21657f},
-    {NPC_FLAMEWAKER_HEALER, 747.132f, -1158.87f, -118.897f, 4.03171f},
-    {NPC_FLAMEWAKER_HEALER, 757.116f, -1170.12f, -118.793f, 3.40339f},
-    {NPC_FLAMEWAKER_HEALER, 755.910f, -1184.46f, -118.449f, 2.80998f}
+    {NPC_FLAMEWAKER_HEALER, 747.132f, -1158.87f, -118.897f, 4.03171f}
 };
 
 struct boss_majordomoAI : public ScriptedAI
@@ -89,7 +85,7 @@ struct boss_majordomoAI : public ScriptedAI
         Reset();
     }
 
-    ObjectGuid m_addSpawns[8];
+    ObjectGuid m_addSpawns[4];
     uint32 Reflection_Timer;
     uint32 TPDomo_Timer;
     uint32 AddCount;
@@ -118,7 +114,7 @@ struct boss_majordomoAI : public ScriptedAI
         Reflection_Timer =  30000;
         TPDomo_Timer = 10000 + rand() % 20000;
         AddSpawn = false;
-        AddCount = 8;
+        AddCount = 4;
 
         for (auto& guid : m_addSpawns)
         {
@@ -170,7 +166,7 @@ struct boss_majordomoAI : public ScriptedAI
                 }
             }
         }
-        if (AddCount <= 4)
+        if (AddCount <= 2)
         {
             for (auto const& guid : m_addSpawns)
             {
