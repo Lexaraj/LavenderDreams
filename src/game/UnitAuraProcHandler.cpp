@@ -305,7 +305,7 @@ SpellProcEventTriggerCheck Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, Spel
 #endif
         // DRUID
         // Omen of Clarity
-        if (spellProto->Id == 16864)
+        /*if (spellProto->Id == 16864)
         {
             if (!procSpell && (procFlag & (PROC_FLAG_DEAL_MELEE_SWING | PROC_FLAG_DEAL_MELEE_ABILITY)))
             {
@@ -315,7 +315,7 @@ SpellProcEventTriggerCheck Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, Spel
                     return SPELL_PROC_TRIGGER_ROLL_FAILED;
             }
             return SPELL_PROC_TRIGGER_FAILED;
-        }
+        }*/
         // PRIEST
         // Inspiration
         if (spellProto->SpellIconID == 79 && spellProto->SpellFamilyName == SPELLFAMILY_PRIEST)
@@ -982,12 +982,13 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 amount, uint
 
                     // heal amount
                     basepoints[0] = dither(triggerAmount * amount / 100);
+                    basepoints[1] = dither(triggerAmount * amount / 100 / 2);	//Lavender Dreams - Mana Restore for caster
 
                     // don't heal for 0
                     if (basepoints[0] < 1)
                         basepoints[0] = 1;
 
-                    pVictim->CastCustomSpell(pVictim, 15290, basepoints[0], {}, {}, true, castItem, triggeredByAura);
+                    pVictim->CastCustomSpell(pVictim, 15290, basepoints[0], basepoints[1], {}, true, castItem, triggeredByAura);
                     return SPELL_AURA_PROC_OK;                                // no hidden cooldown
                 }
                 // Oracle Healing Bonus ("Garments of the Oracle" set)
@@ -1150,6 +1151,19 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 amount, uint
                 return SPELL_AURA_PROC_OK;                                // no hidden cooldown
             }
 
+			//Lavender Dreams - Shield Specialization Mana Restore
+            if (dummySpell->SpellIconID == 1463)             // only this spell have SpellIconID == 1463 and dummy aura
+            {
+                if (GetPowerType() != POWER_MANA)
+                    return SPELL_AURA_PROC_FAILED;
+
+                // mana reward
+                basepoints[0] = dither(triggerAmount * GetMaxPower(POWER_MANA) / 100);
+                target = this;
+                triggered_spell_id = 35029;
+                break;
+            }
+			            
             switch (dummySpell->Id)
             {
                 // Holy Power (Redemption Armor set)
