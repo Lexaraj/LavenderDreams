@@ -770,6 +770,12 @@ bool ChatHandler::PartyBotAddRequirementCheck(Player const* pPlayer, Player cons
         return false;
     }
 
+    // Must be resting or inside dungeon to summon bot
+    if (!pPlayer->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && !pPlayer->GetMap()->IsDungeon()) {
+        SendSysMessage("You must be resting or inside a dungeon to summon bots.");
+        return false;
+    }
+
     // Spawning bots inside BG will cause server crash on BG end.
     if (pPlayer->InBattleGround())
     {
@@ -815,11 +821,13 @@ bool ChatHandler::PartyBotAddRequirementCheck(Player const* pPlayer, Player cons
             return false;
         }
 
+        /* Lavender Dreams: disabled 3/23/2025
         if (pPlayer->GetMap()->IsDungeon())
         {
             SendSysMessage("Cannot add bots while inside instances.");
             return false;
         }
+        */
 
         // Clone command.
         if (pTarget)
@@ -954,12 +962,48 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
     if (!pPlayer)
         return false;
 
-    Player* pTarget = GetSelectedPlayer();
+    Player* pTarget = nullptr;  // Will be set if using target-based cloning
+    ObjectGuid guid;            // Will store the GUID of the character to clone
+
+    // Check if a name argument was provided
+    if (args && *args)
+    {
+        std::string name = ExtractPlayerNameFromLink(&args);
+        if (name.empty())
+        {
+            SendSysMessage(LANG_PLAYER_NOT_FOUND);
+            SetSentErrorMessage(true);
+            return false;
+        }
+
+        // Look up the GUID of the character by name
+        guid = sObjectMgr.GetPlayerGuidByName(name).GetCounter();
+        if (!guid)
+        {
+            SendSysMessage(LANG_PLAYER_NOT_FOUND);
+            SetSentErrorMessage(true);
+            return false;
+        }
+
+        // Check if the player is already online
+        if (sObjectAccessor.FindPlayerNotInWorld(guid))
+        {
+            SendSysMessage("Player is already online!");
+            SetSentErrorMessage(true);
+            return false;
+        }
+    }
+    else
+    {
+        // No name provided, fall back to default
+        pTarget = GetSelectedPlayer();
     if (!pTarget)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
         return false;
+        }
+        guid = pTarget->GetGUID();
     }
 
     if (!PartyBotAddRequirementCheck(pPlayer, pTarget))
@@ -968,13 +1012,49 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
         return false;
     }
 
-    uint8 botRace = pTarget->GetRace();
-    uint8 botClass = pTarget->GetClass();
+    // Get the race and class of the character to clone
+    uint8 botRace, botClass;
+    Player* pClonedPlayer = nullptr;
+    if (pTarget)
+    {
+        // If we have a target, use their current race/class
+        botRace = pTarget->GetRace();
+        botClass = pTarget->GetClass();
+        pClonedPlayer = pTarget;
+    }
+    else
+    {
+        // If we're cloning by name, get the info from the db
+        QueryResult* result = CharacterDatabase.PQuery("SELECT race, class FROM characters WHERE guid = %u", guid).get();
+        if (!result)
+        {
+            SendSysMessage("Could not find character data.");
+            SetSentErrorMessage(true);
+            return false;
+        }
+        Field* fields = result->Fetch();
+        botRace = fields[0].GetUInt8();
+        botClass = fields[1].GetUInt8();
+        delete result;
+
+        // Create a temporary player object for cloning
+        pClonedPlayer = new Player(nullptr);
+        if (!pClonedPlayer->LoadFromDB(ObjectGuid(guid), nullptr))
+        {
+            delete pClonedPlayer;
+            SendSysMessage("Could not load character data.");
+            SetSentErrorMessage(true);
+            return false;
+        }
+    }
 
     float x, y, z;
     pPlayer->GetNearPoint(pPlayer, x, y, z, 0, 5.0f, frand(0.0f, 6.0f));
 
-    PartyBotAI* ai = new PartyBotAI(pPlayer, pTarget, ROLE_INVALID, botRace, botClass, pPlayer->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
+    // Create a new bot instance with the target's race/class
+    PartyBotAI* ai = new PartyBotAI(pPlayer, pClonedPlayer, ROLE_INVALID, botRace, botClass, pPlayer->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
+    ai->m_cloneGuid = guid; // Tell the bot which character to clone data from
+
     if (sPlayerBotMgr.AddBot(ai))
         SendSysMessage("New party bot added.");
     else
@@ -984,6 +1064,10 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
         return false;
     }
 
+    // Clean up the temporary player if we created one
+    if (!pTarget && pClonedPlayer)
+        delete pClonedPlayer;
+
     return true;
 }
 
@@ -992,6 +1076,13 @@ bool ChatHandler::HandlePartyBotLoadCommand(char* args)
     Player* pPlayer = m_session->GetPlayer();
     if (!pPlayer)
         return false;
+
+    /* Lavender Dreams customization -- added 3/23/2025 */
+    // Must be resting or inside dungeon to summon bot
+    if (!pPlayer->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && !pPlayer->GetMap()->IsDungeon()) {
+        SendSysMessage("You must be resting or inside a dungeon to summon bots.");
+        return false;
+    }
 
     std::string name = ExtractPlayerNameFromLink(&args);
     if (name.empty())
@@ -1768,6 +1859,51 @@ bool ChatHandler::HandlePartyBotRemoveCommand(char* args)
     SetSentErrorMessage(true);
     return false;
 }
+
+bool ChatHandler::HandlePartyBotStayCommand(char * args)
+{
+    Player* pTarget = GetSelectedPlayer();
+    if (!pTarget || !pTarget->AI())
+    {
+        PSendSysMessage("No valid target selected.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pTarget->AI()))
+    {
+        pAI->SetStaying(true);
+        PSendSysMessage("%s will stay in position.", pTarget->GetName());
+        return true;
+    }
+
+    PSendSysMessage("Target is not a party bot.");
+    SetSentErrorMessage(true);
+    return false;
+}
+
+bool ChatHandler::HandlePartyBotUnstayCommand(char * args)
+{
+    Player* pTarget = GetSelectedPlayer();
+    if (!pTarget || !pTarget->AI())
+    {
+        PSendSysMessage("No valid target selected.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pTarget->AI()))
+    {
+        pAI->SetStaying(false);
+        PSendSysMessage("%s is free to move.", pTarget->GetName());
+        return true;
+    }
+
+    PSendSysMessage("Target is not a party bot.");
+    SetSentErrorMessage(true);
+    return false;
+}
+
 
 bool ChatHandler::HandleBattleBotAddAlteracCommand(char* args)
 {

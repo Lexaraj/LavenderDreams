@@ -32,6 +32,7 @@ public:
         m_leaderGuid = pLeader->GetObjectGuid();
         m_cloneGuid = pClone ? pClone->GetObjectGuid() : ObjectGuid();
         m_updateTimer.Reset(2000);
+        m_isStaying = false;
     }
     PartyBotAI(Player* pLeader, uint32 mapId, uint32 instanceId, float x, float y, float z, float o)
         : CombatBotBaseAI(), m_mapId(mapId), m_instanceId(instanceId), m_x(x), m_y(y), m_z(z), m_o(o)
@@ -39,6 +40,7 @@ public:
         m_role = ROLE_INVALID;
         m_leaderGuid = pLeader->GetObjectGuid();
         m_updateTimer.Reset(2000);
+        m_isStaying = false;
     }
 
     bool OnSessionLoaded(PlayerBotEntry* entry, WorldSession* sess) final;
@@ -67,6 +69,7 @@ public:
     bool EnterCombatDruidForm();
     bool ShouldEnterStealth() const;
     bool EnterStealthIfNeeded(SpellEntry const* pStealthSpell);
+    bool HandleInitialCombatEntry(Unit* pVictim);
 
     void UpdateInCombatAI() final;
     void UpdateOutOfCombatAI() final;
@@ -89,6 +92,9 @@ public:
     void UpdateInCombatAI_Druid() final;
     void UpdateOutOfCombatAI_Druid() final;
 
+    bool IsStaying() const { return m_isStaying; }
+    void SetStaying(bool staying);
+
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;
     ShortTimeTracker m_updateTimer;
@@ -104,6 +110,7 @@ public:
     float m_z = 0.0f;
     float m_o = 0.0f;
     bool m_resetSpellData = false;
+    bool m_isStaying = false;
 };
 
 #endif
