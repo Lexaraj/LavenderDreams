@@ -147,9 +147,9 @@ struct boss_baron_geddonAI : public ScriptedAI
         {
             if (DoCastSpellIfCan(m_creature, SPELL_INFERNO) == CAST_OK)
             {
-                m_uiInfernoTimer = urand(18000, 24000);
+                m_uiInfernoTimer = urand(22000, 28000);
                 InfCount = 0;
-                Tick = 1000;
+                Tick = 2000;
                 m_bInferno = true;
                 m_creature->AddUnitState(UNIT_STATE_ROOT);
             }
@@ -160,7 +160,7 @@ struct boss_baron_geddonAI : public ScriptedAI
         // Inferno damage increases with each tick
         if (m_bInferno)
         {
-            if (Tick >= 1000)
+            if (Tick >= 2000)
             {
                 int Damage = 0;
                 switch (InfCount)
@@ -174,14 +174,7 @@ struct boss_baron_geddonAI : public ScriptedAI
                         Damage = 1000;
                         break;
                     case 4:
-                    case 5:
                         Damage = 2000;
-                        break;
-                    case 6:
-                        Damage = 3000;
-                        break;
-                    case 7:
-                        Damage = 5000;
                         m_bInferno = false;
                         m_creature->ClearUnitState(UNIT_STATE_ROOT);
                         break;
