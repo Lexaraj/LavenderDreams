@@ -65,7 +65,7 @@ struct DruidFerociousBiteScript : SpellScript
             int32 dmg = pPlayer->GetPower(POWER_ENERGY) * spell->m_spellInfo->DmgMultiplier[effIdx];
             pPlayer->CastCustomSpell(spell->GetUnitTarget(), damageSpellId, dmg, {}, {}, true);
 #endif
-            pPlayer->SetPower(POWER_ENERGY, 0);
+            //pPlayer->SetPower(POWER_ENERGY, 0);
         }
     }
 };
