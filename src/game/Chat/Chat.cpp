@@ -111,7 +111,8 @@ ChatCommand * ChatHandler::getCommandTable()
         { "unequip",    SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotUnequipCommand,     "", nullptr },
         { "remove",     SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotRemoveCommand,      "", nullptr },
         { "stay",       SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotStayCommand,        "", nullptr },
-        { "follow",     SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotUnstayCommand,      "", nullptr },
+        { "unstay",     SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotUnstayCommand,      "", nullptr },
+        { "follow",     SEC_ADMINISTRATOR,      false, &ChatHandler::HandlePartyBotFollowCommand,      "", nullptr },
         { nullptr,      0,                      false, nullptr,                                        "", nullptr },
     };
     static ChatCommand battleBotAddCommandTable[] =

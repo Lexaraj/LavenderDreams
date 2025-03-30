@@ -50,6 +50,7 @@ public:
 
     void CloneFromPlayer(Player const* pPlayer);
     void AddToPlayerGroup();
+    void SetOwner(Player* pOwner);
 
     bool CanTryToCastSpell(Unit const* pTarget, SpellEntry const* pSpellEntry) const final;
     Player* GetPartyLeader() const;
