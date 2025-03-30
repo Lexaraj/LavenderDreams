@@ -336,9 +336,6 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
     if (me->IsMounted())
         me->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
-    if (!me->IsInCombat() && HandleInitialCombatEntry(pVictim))
-        return true;
-
     if (me->Attack(pVictim, true))
     {
         if (GetRole() == ROLE_RANGE_DPS &&
@@ -350,7 +347,7 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
 
         if (!m_isStaying)
         {
-        me->GetMotionMaster()->MoveChase(pVictim, 1.0f, GetRole() == ROLE_MELEE_DPS ? 3.0f : 0.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 1.0f, GetRole() == ROLE_MELEE_DPS ? 3.0f : 0.0f);
         }
         
         return true;
@@ -548,6 +545,15 @@ void PartyBotAI::AddToPlayerGroup()
 
         group->AddMember(me->GetObjectGuid(), me->GetName());
     } 
+}
+
+void PartyBotAI::SetOwner(Player* pOwner)
+{
+    if (!pOwner)
+        return;
+
+    m_leaderGuid = pOwner->GetObjectGuid();
+    AddToPlayerGroup();
 }
 
 void PartyBotAI::OnPacketReceived(WorldPacket const* packet)
@@ -2817,7 +2823,8 @@ void PartyBotAI::SetStaying(bool staying)
 }
 
 bool PartyBotAI::HandleInitialCombatEntry(Unit* pVictim)
-{
+{   
+
     // If we have marked targets to CC, try to CC them first
     if (!m_marksToCC.empty())
     {

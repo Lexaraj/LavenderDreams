@@ -883,7 +883,7 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
         std::string option = arg1;
         if (option == "warrior")
             botClass = CLASS_WARRIOR;
-        else if (option == "paladin" && pPlayer->GetTeam() == ALLIANCE)
+        else if (option == "paladin")
             botClass = CLASS_PALADIN;
         else if (option == "hunter")
             botClass = CLASS_HUNTER;
@@ -891,7 +891,7 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
             botClass = CLASS_ROGUE;
         else if (option == "priest")
             botClass = CLASS_PRIEST;
-        else if (option == "shaman" && pPlayer->GetTeam() == HORDE)
+        else if (option == "shaman")
             botClass = CLASS_SHAMAN;
         else if (option == "mage")
             botClass = CLASS_MAGE;
@@ -958,17 +958,55 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
 
 bool ChatHandler::HandlePartyBotCloneCommand(char* args)
 {
-    Player* pPlayer = m_session->GetPlayer();
+    Player* pPlayer = GetSession()->GetPlayer();
     if (!pPlayer)
         return false;
 
-    Player* pTarget = nullptr;  // Will be set if using target-based cloning
-    ObjectGuid guid;            // Will store the GUID of the character to clone
+    Player* pTarget = nullptr;
 
-    // Check if a name argument was provided
-    if (args && *args)
+    PSendSysMessage("Args: '%s'", args ? args : "null");
+    
+    if (!args || strcmp(args, "") == 0)
     {
-        std::string name = ExtractPlayerNameFromLink(&args);
+        pTarget = GetSelectedPlayer();
+        if (!pTarget)
+        {
+            // clone from self
+            PartyBotAI* ai = new PartyBotAI(pPlayer, nullptr, ROLE_INVALID, pPlayer->GetRace(), pPlayer->GetClass(), pPlayer->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
+            if (sPlayerBotMgr.AddBot(ai))
+            {
+                ai->m_cloneGuid = pPlayer->GetObjectGuid();
+                SendSysMessage("Cloned from self.");
+            }
+            else
+            {
+                SendSysMessage("Error spawning bot.");
+            }
+            return true;
+        }
+        else
+        {
+            // clone from target
+            PartyBotAI* ai = new PartyBotAI(pPlayer, pTarget, ROLE_INVALID, pTarget->GetRace(), pTarget->GetClass(), pTarget->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
+            if (sPlayerBotMgr.AddBot(ai))
+            {
+                ai->m_cloneGuid = pTarget->GetObjectGuid();
+                static const char* const classNames[] = {"None", "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"};
+                PSendSysMessage("%s (Level %u %s) added as party bot.", pTarget->GetName(), pTarget->GetLevel(), classNames[pTarget->GetClass()]);
+                PSendSysMessage("Cloned from %s.", pTarget->GetName());
+                return true;
+            }
+            else
+            {
+                SendSysMessage("Error spawning bot.");
+                SetSentErrorMessage(true);
+                return false;
+            }
+        }
+    }
+    else
+    {
+       std::string name = ExtractPlayerNameFromLink(&args);
         if (name.empty())
         {
             SendSysMessage(LANG_PLAYER_NOT_FOUND);
@@ -976,99 +1014,74 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
             return false;
         }
 
-        // Look up the GUID of the character by name
-        guid = sObjectMgr.GetPlayerGuidByName(name).GetCounter();
+        ObjectGuid guid = sObjectMgr.GetPlayerGuidByName(name).GetCounter();
         if (!guid)
         {
             SendSysMessage(LANG_PLAYER_NOT_FOUND);
             SetSentErrorMessage(true);
             return false;
         }
-
-        // Check if the player is already online
-        if (sObjectAccessor.FindPlayerNotInWorld(guid))
-        {
-            SendSysMessage("Player is already online!");
-            SetSentErrorMessage(true);
-            return false;
-        }
-    }
-    else
-    {
-        // No name provided, fall back to default
-        pTarget = GetSelectedPlayer();
-    if (!pTarget)
-    {
-        SendSysMessage(LANG_NO_CHAR_SELECTED);
-        SetSentErrorMessage(true);
-        return false;
-        }
-        guid = pTarget->GetGUID();
-    }
-
-    if (!PartyBotAddRequirementCheck(pPlayer, pTarget))
-    {
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    // Get the race and class of the character to clone
-    uint8 botRace, botClass;
-    Player* pClonedPlayer = nullptr;
-    if (pTarget)
-    {
-        // If we have a target, use their current race/class
-        botRace = pTarget->GetRace();
-        botClass = pTarget->GetClass();
-        pClonedPlayer = pTarget;
-    }
-    else
-    {
-        // If we're cloning by name, get the info from the db
-        QueryResult* result = CharacterDatabase.PQuery("SELECT race, class FROM characters WHERE guid = %u", guid).get();
+        
+        // Get player info from database
+        std::unique_ptr<QueryResult> result = CharacterDatabase.PQuery(
+            "SELECT race, class, level FROM characters WHERE guid = %u", guid);
         if (!result)
         {
-            SendSysMessage("Could not find character data.");
+            SendSysMessage("Unable to get player info from database.");
             SetSentErrorMessage(true);
             return false;
         }
+        
         Field* fields = result->Fetch();
-        botRace = fields[0].GetUInt8();
-        botClass = fields[1].GetUInt8();
-        delete result;
+        uint8 race = fields[0].GetUInt8();
+        uint8 class_ = fields[1].GetUInt8();
+        uint32 level = fields[2].GetUInt32();
 
-        // Create a temporary player object for cloning
-        pClonedPlayer = new Player(nullptr);
-        if (!pClonedPlayer->LoadFromDB(ObjectGuid(guid), nullptr))
+        
+        // clone from bill
+        PartyBotAI* ai = new PartyBotAI(pPlayer, nullptr, ROLE_INVALID, race, class_, level, pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
+        if (sPlayerBotMgr.AddBot(ai))
         {
-            delete pClonedPlayer;
-            SendSysMessage("Could not load character data.");
+            ai->m_cloneGuid = guid;
+            static const char* const classNames[] = {"None", "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"};
+            PSendSysMessage("%s (Level %u %s) added as party bot.", name.c_str(), level, classNames[class_]);
+            PSendSysMessage("Cloned from %s.", name);
+            return true;
+        }
+        else
+        {
+            SendSysMessage("Error spawning bot.");
             SetSentErrorMessage(true);
             return false;
         }
+        return false;
     }
+
+    PSendSysMessage("Got here");
+
+    uint8 botRace = pTarget->GetRace();
+    uint8 botClass = pTarget->GetClass();
+    uint32 botLevel = pTarget->GetLevel();
+
+    PSendSysMessage("Bot race: %u, bot class: %u, bot level: %u", botRace, botClass, botLevel);
 
     float x, y, z;
     pPlayer->GetNearPoint(pPlayer, x, y, z, 0, 5.0f, frand(0.0f, 6.0f));
 
     // Create a new bot instance with the target's race/class
-    PartyBotAI* ai = new PartyBotAI(pPlayer, pClonedPlayer, ROLE_INVALID, botRace, botClass, pPlayer->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
-    ai->m_cloneGuid = guid; // Tell the bot which character to clone data from
-
+    PartyBotAI* ai = new PartyBotAI(pPlayer, pTarget, ROLE_INVALID, botRace, botClass, botLevel, pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
     if (sPlayerBotMgr.AddBot(ai))
-        SendSysMessage("New party bot added.");
+    {
+        static const char* const classNames[] = {"None", "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"};
+        PSendSysMessage("%s (Level %u %s) added as party bot.", pTarget->GetName(), botLevel, classNames[botClass]);
+        return true;
+    }
     else
     {
         SendSysMessage("Error spawning bot.");
         SetSentErrorMessage(true);
         return false;
     }
-
-    // Clean up the temporary player if we created one
-    if (!pTarget && pClonedPlayer)
-        delete pClonedPlayer;
-
-    return true;
 }
 
 bool ChatHandler::HandlePartyBotLoadCommand(char* args)
@@ -1900,6 +1913,123 @@ bool ChatHandler::HandlePartyBotUnstayCommand(char * args)
     }
 
     PSendSysMessage("Target is not a party bot.");
+    SetSentErrorMessage(true);
+    return false;
+}
+
+bool ChatHandler::HandlePartyBotFollowCommand(char* args)
+{
+    Player* pPlayer = GetSession()->GetPlayer();
+    if (!pPlayer)
+        return false;
+
+    // If no args provided, try to make all party bots follow the current target
+    if (!*args)
+    {
+        Unit* pTarget = GetSelectedUnit();
+        if (!pTarget || !pTarget->IsPlayer())
+        {
+            SendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
+            SetSentErrorMessage(true);
+            return false;
+        }
+
+        Group* pGroup = pPlayer->GetGroup();
+        if (!pGroup)
+        {
+            SendSysMessage("You are not in a group.");
+            SetSentErrorMessage(true);
+            return false;
+        }
+
+        bool success = false;
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (pMember == pPlayer)
+                    continue;
+
+                if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pMember->AI()))
+                {
+                    pAI->SetOwner(pTarget->ToPlayer());
+                    success = true;
+                }
+            }
+        }
+
+        if (success)
+            PSendSysMessage("All party bots will now follow %s", pTarget->GetName());
+        else
+            SendSysMessage("No party bots in group.");
+
+        return success;
+    }
+
+    // Handle "me" argument to make bots follow the player
+    if (strcmp(args, "me") == 0)
+    {
+        Group* pGroup = pPlayer->GetGroup();
+        if (!pGroup)
+        {
+            SendSysMessage("You are not in a group.");
+            SetSentErrorMessage(true);
+            return false;
+        }
+
+        bool success = false;
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (pMember == pPlayer)
+                    continue;
+
+                if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pMember->AI()))
+                {
+                    pAI->SetOwner(pPlayer);
+                    success = true;
+                }
+            }
+        }
+
+        if (success)
+            SendSysMessage("All party bots will now follow you.");
+        else
+            SendSysMessage("No party bots in group.");
+
+        return success;
+    }
+    
+    Player* pTarget = nullptr;
+    ObjectGuid target_guid;
+    std::string target_name;
+    if (!ExtractPlayerTarget(&args, &pTarget, &target_guid, &target_name))
+        return false;
+
+    if (!pTarget)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    Player* pBot = GetSelectedPlayer();
+    if (!pBot)
+    {
+        SendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pBot->AI()))
+    {
+        pAI->SetOwner(pTarget);
+        PSendSysMessage("Party bot %s will now follow %s", pBot->GetName(), pTarget->GetName());
+        return true;
+    }
+
+    SendSysMessage("Selected unit is not a party bot.");
     SetSentErrorMessage(true);
     return false;
 }
