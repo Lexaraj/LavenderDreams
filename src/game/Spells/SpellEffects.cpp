@@ -1881,7 +1881,8 @@ void Spell::EffectHeal(SpellEffectIndex effIdx)
             if (targetAura->GetSpellProto()->IsFitToFamilyMask<CF_DRUID_REJUVENATION>())
                 tickcount = 4;
 
-            unitTarget->RemoveAurasDueToSpell(targetAura->GetId());
+			// Lavender Dreams - Swiftmend does not remove HoT
+            //unitTarget->RemoveAurasDueToSpell(targetAura->GetId());
 
             addhealth += tickheal * tickcount;
         }
@@ -4830,8 +4831,9 @@ void Spell::EffectScriptEffect(SpellEffectIndex effIdx)
                     if (spellId2 <= 1)
                         continue;
 
+					//Lavender Dreams - Judgement does not remove Seal
                     // found, remove seal
-                    m_casterUnit->RemoveAurasDueToSpellByCancel(aura->GetId());
+                    //m_casterUnit->RemoveAurasDueToSpellByCancel(aura->GetId());
                     break;
                 }
 
