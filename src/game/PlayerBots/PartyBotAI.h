@@ -70,7 +70,6 @@ public:
     bool EnterCombatDruidForm();
     bool ShouldEnterStealth() const;
     bool EnterStealthIfNeeded(SpellEntry const* pStealthSpell);
-    bool HandleInitialCombatEntry(Unit* pVictim);
 
     void UpdateInCombatAI() final;
     void UpdateOutOfCombatAI() final;
@@ -95,6 +94,7 @@ public:
 
     bool IsStaying() const { return m_isStaying; }
     void SetStaying(bool staying);
+    void RepositionMeleeDps();
 
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;
