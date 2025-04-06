@@ -462,10 +462,7 @@ bool PlayerBotMgr::AddBot(uint32 playerGUID, bool chatBot, PlayerBotAI* pAI)
     return true;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
 bool PlayerBotMgr::AddRandomBot()
 {
     uint32 alea = urand(0, m_totalChance);
@@ -961,8 +958,6 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
     return true;
 }
 
-<<<<<<< HEAD
-=======
 bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
 {
     // Get basic player info from database
@@ -1131,7 +1126,6 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     return true; 
 }
 
->>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
 bool ChatHandler::HandlePartyBotCloneCommand(char* args)
 {
     Player* pPlayer = GetSession()->GetPlayer();
@@ -1163,7 +1157,7 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
         else
         {
             // clone from target
-            PartyBotAI* ai = new PartyBotAI(pPlayer, pTarget, ROLE_INVALID, pTarget->GetRace(), pTarget->GetClass(), pTarget->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
+            PartyBotAI* ai = new PartyBotAI(pPlayer, nullptr, ROLE_INVALID, pTarget->GetRace(), pTarget->GetClass(), pTarget->GetLevel(), pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
             if (sPlayerBotMgr.AddBot(ai))
             {
                 ai->m_cloneGuid = pTarget->GetObjectGuid();
@@ -1197,16 +1191,8 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
             SetSentErrorMessage(true);
             return false;
         }
-<<<<<<< HEAD
-        
-        // Get player info from database
-        std::unique_ptr<QueryResult> result = CharacterDatabase.PQuery(
-            "SELECT race, class, level FROM characters WHERE guid = %u", guid);
-        if (!result)
-=======
 
         if (sPlayerBotMgr.CloneOfflinePlayer(pPlayer, guid))
->>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
         {
             PSendSysMessage("Cloned from %s.", name.c_str());
             return true;
@@ -1271,7 +1257,7 @@ bool ChatHandler::HandlePartyBotLoadCommand(char* args)
     }
 
     PSendSysMessage("Loading %s as party bot.", name.c_str());
-    return true;
+        return true;
 }
 
 bool ChatHandler::HandlePartyBotSetRoleCommand(char* args)

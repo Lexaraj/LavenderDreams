@@ -93,11 +93,8 @@ class PlayerBotMgr
         void DeleteAll();
         void AddAllBots();
 
-<<<<<<< HEAD
-=======
         bool CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid);
 
->>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
         void OnBotLogout(PlayerBotEntry *e);
         void OnBotLogin(PlayerBotEntry *e);
         void OnPlayerInWorld(Player* pPlayer);
