@@ -1007,15 +1007,23 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     // Create a new Player object
     Player* newChar = new Player(sess);
     uint32 pguid = e->playerGUID;
-    if (!newChar->Create(pguid, name, race, class_, gender, skin, face, hairStyle, hairColor, facialHair))
+    
+    // Set the player's name before creation
+    std::string botName = name.substr(0, std::min((size_t)7, name.length())) + "clone";
+    newChar->SetName(botName);
+    
+    if (!newChar->Create(pguid, botName, race, class_, gender, skin, face, hairStyle, hairColor, facialHair))
     {
         delete newChar;
         return false;
     }
+
+    // Set basic player properties
     newChar->SetLocationMapId(pPlayer->GetMapId());
     newChar->SetLocationInstanceId(pPlayer->GetMap()->GetInstanceId());
     newChar->SetAutoInstanceSwitch(false);
     newChar->GetMotionMaster()->Initialize();
+    newChar->SetLevel(level);
 
     // Set instance
     if (pPlayer->GetMap()->GetInstanceId() && pPlayer->GetMapId() > 1) // Not a continent
@@ -1039,25 +1047,24 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     newChar->SetMap(map);
     newChar->SaveRecallPosition();
     newChar->CreatePacketBroadcaster();
+    
+    // Create and set up the MasterPlayer
     MasterPlayer* mPlayer = new MasterPlayer(sess);
     mPlayer->LoadPlayer(newChar);
     mPlayer->SetSocial(sSocialMgr.LoadFromDB(nullptr, newChar->GetObjectGuid()));
+    
+    // Add player to world
     if (!newChar->GetMap()->Add(newChar))
     {
         delete newChar;
         return false;
     }
+    
+    // Set up session
     sess->SetPlayer(newChar);
     sess->SetMasterPlayer(mPlayer);
     sObjectAccessor.AddObject(newChar);
     newChar->SetCanModifyStats(true);
-    newChar->UpdateAllStats();
-
-    newChar->SetLevel(level);
-
-    // Set a unique name for the clone
-    std::string botName = name.substr(0, std::min((size_t)7, name.length())) + "clone";
-    newChar->SetName(botName);
 
     // Parse equipment cache
     std::string equipmentCache = fields[10].GetCppString();
@@ -1086,12 +1093,10 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
         }
     }
 
-
     // Clone spells
     result = CharacterDatabase.PQuery(
         "SELECT spell, active, disabled FROM character_spell WHERE guid = %u", 
         guid.GetCounter());
-
     if (result)
     {
         do
@@ -1110,7 +1115,6 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     result = CharacterDatabase.PQuery(
         "SELECT skill, value, max FROM character_skills WHERE guid = %u", 
         guid.GetCounter());
-
     if (result)
     {
         do
@@ -1122,6 +1126,18 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
             newChar->SetSkill(skillId, value, maxValue);
         } while (result->NextRow());
     }
+
+    // Update stats after cloning skills
+    newChar->UpdateAllStats();
+    newChar->SetHealth(newChar->GetMaxHealth());
+    newChar->SetPower(POWER_MANA, newChar->GetMaxPower(POWER_MANA));
+    newChar->SetPower(POWER_ENERGY, newChar->GetMaxPower(POWER_ENERGY));
+    newChar->SetPower(POWER_RAGE, 0);
+    newChar->SetPower(POWER_FOCUS, newChar->GetMaxPower(POWER_FOCUS));
+
+    // Set the bot as online in the bot manager
+    e->state = PB_STATE_ONLINE;
+    m_stats.onlineCount++;
 
     return true; 
 }
