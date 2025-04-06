@@ -347,7 +347,14 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
 
         if (!m_isStaying)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 1.0f, GetRole() == ROLE_MELEE_DPS ? 3.0f : 0.0f);
+            if (GetRole() == ROLE_MELEE_DPS)
+            {
+                RepositionMeleeDps();
+            }
+            else
+            {
+                me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
+            }
         }
         
         return true;
@@ -1005,6 +1012,9 @@ void PartyBotAI::UpdateInCombatAI()
                 }
             }
         }
+        else if (m_role == ROLE_MELEE_DPS)
+            RepositionMeleeDps();
+        
         else if (CrowdControlMarkedTargets())
             return;
     }
@@ -3435,43 +3445,75 @@ void PartyBotAI::SetStaying(bool staying)
     }
 }
 
-bool PartyBotAI::HandleInitialCombatEntry(Unit* pVictim)
-{   
+void PartyBotAI::RepositionMeleeDps()
+{
+    Unit* pVictim = me->GetVictim();
+    if (!pVictim || !IsValidHostileTarget(pVictim))
+        return;
+    
+    // Don't reposition if we have aggro
+    if (pVictim->GetVictim() == me)
+        return;
 
-    // If we have marked targets to CC, try to CC them first
-    if (!m_marksToCC.empty())
+    if (GetRole() == ROLE_MELEE_DPS && !m_isStaying)
     {
-        for (auto markId : m_marksToCC)
+        bool needsReposition = false;
+        float angle = pVictim->GetAngle(me);
+        float relativeAngle = angle - pVictim->GetOrientation();
+        // Normalize angle to [-PI, PI]
+        while (relativeAngle > M_PI_F) relativeAngle -= 2 * M_PI_F;
+        while (relativeAngle < -M_PI_F) relativeAngle += 2 * M_PI_F;
+        
+        // Reposition if in front 90 degrees (45 degrees on each side of front)
+        if (std::abs(relativeAngle) < M_PI_F * 0.5f)
+            needsReposition = true;
+        // Reposition if beyond 120 degrees (60 degrees on each side of back)
+        else if (std::abs(relativeAngle) > M_PI_F * 0.67f)
+            needsReposition = true;
+        
+        // Reposition if we're inside the target's hitbox circle
+        float targetReach = pVictim->GetCombatReach(true);
+        float currentDist = me->GetDistance(pVictim);
+        if (currentDist < targetReach - 2.0f)
+            needsReposition = true;
+
+        if (needsReposition)
         {
-            if (Unit* pMarkedTarget = GetMarkedTarget(markId))
+            // Calculate distance to potential positions on both sides
+            float newAngle;
+            float leftAngle = pVictim->GetOrientation() - M_PI_F * 0.58f;
+            float rightAngle = pVictim->GetOrientation() + M_PI_F * 0.58f;
+            float currentX = me->GetPositionX();
+            float currentY = me->GetPositionY();
+            float leftX = pVictim->GetPositionX() + cos(leftAngle) * (targetReach + 0.5f);
+            float leftY = pVictim->GetPositionY() + sin(leftAngle) * (targetReach + 0.5f);
+            float rightX = pVictim->GetPositionX() + cos(rightAngle) * (targetReach + 0.5f);
+            float rightY = pVictim->GetPositionY() + sin(rightAngle) * (targetReach + 0.5f);
+            float distToLeft = sqrt(pow(currentX - leftX, 2) + pow(currentY - leftY, 2));
+            float distToRight = sqrt(pow(currentX - rightX, 2) + pow(currentY - rightY, 2));
+            
+            // Choose the closer position, but prefer staying on the same side unless the other side is significantly closer
+            bool currentlyOnLeft = relativeAngle < 0;
+            if (currentlyOnLeft)
             {
-                if (IsValidHostileTarget(pMarkedTarget) && CanUseCrowdControl(nullptr, pMarkedTarget))
-                {
-                    // Try to CC the marked target
-                    if (CrowdControlMarkedTargets())
-                    {                        
-                        break;
-                    }
-                }
+                if (distToRight < distToLeft * 0.7f)
+                    newAngle = rightAngle;
+                else
+                    newAngle = leftAngle;
             }
+            else
+            {
+                if (distToLeft < distToRight * 0.7f)
+                    newAngle = leftAngle;
+                else
+                    newAngle = rightAngle;
+            }
+            
+            float newX = pVictim->GetPositionX() + cos(newAngle) * (targetReach + 0.5f);
+            float newY = pVictim->GetPositionY() + sin(newAngle) * (targetReach + 0.5f);
+            float newZ = pVictim->GetPositionZ();
+            
+            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ);
         }
     }
-
-    // If we have marked targets to focus, try to attack them first
-    if (!m_marksToFocus.empty())
-    {
-        for (auto markId : m_marksToFocus)
-        {
-            if (Unit* pMarkedTarget = GetMarkedTarget(markId))
-            {
-                if (IsValidHostileTarget(pMarkedTarget))
-                {
-                    AttackStart(pMarkedTarget);
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
 }
