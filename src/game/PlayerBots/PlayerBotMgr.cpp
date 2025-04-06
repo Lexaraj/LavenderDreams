@@ -980,6 +980,7 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     uint8 hairStyle = fields[7].GetUInt8();
     uint8 hairColor = fields[8].GetUInt8();
     uint8 facialHair = fields[9].GetUInt8();
+    std::string equipmentCache = fields[10].GetCppString();
 
     // Calculate spawn position near leader
     float x, y, z;
@@ -1007,7 +1008,7 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     // Create a new Player object
     Player* newChar = new Player(sess);
     uint32 pguid = e->playerGUID;
-    
+
     // Set the player's name before creation
     std::string botName = name.substr(0, std::min((size_t)7, name.length())) + "clone";
     newChar->SetName(botName);
@@ -1024,6 +1025,7 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     newChar->SetAutoInstanceSwitch(false);
     newChar->GetMotionMaster()->Initialize();
     newChar->SetLevel(level);
+    newChar->InitStatsForLevel(true);
 
     // Set instance
     if (pPlayer->GetMap()->GetInstanceId() && pPlayer->GetMapId() > 1) // Not a continent
@@ -1066,32 +1068,22 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     sObjectAccessor.AddObject(newChar);
     newChar->SetCanModifyStats(true);
 
-    // Parse equipment cache
-    std::string equipmentCache = fields[10].GetCppString();
-    std::istringstream iss(equipmentCache);
-    uint32 itemId, enchantId;
-    uint32 slot = EQUIPMENT_SLOT_START;
-    while (iss >> itemId >> enchantId)
+    // Clone skills
+    result = CharacterDatabase.PQuery(
+        "SELECT skill, value, max FROM character_skills WHERE guid = %u", 
+        guid.GetCounter());
+    if (result)
     {
-        if (slot < EQUIPMENT_SLOT_END)
+        do
         {
-            if (itemId != 0)
-            {
-                // Create and equip the item
-                Item* pItem = newChar->EquipNewItem(slot, itemId, true);
-                if (!pItem)
-                {
-                    sLog.Out(LOG_BASIC, LOG_LVL_ERROR, "Failed to equip item %u in slot %u", itemId, slot);
-                }
-                else if (enchantId)
-                {
-                    pItem->ClearEnchantment(PERM_ENCHANTMENT_SLOT);
-                    pItem->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchantId, 0, 0);
-                }
-            }
-            slot++;
-        }
+            fields = result->Fetch();
+            uint32 skillId = fields[0].GetUInt32();
+            uint32 value = fields[1].GetUInt32();
+            uint32 maxValue = fields[2].GetUInt32();
+            newChar->SetSkill(skillId, value, maxValue);
+        } while (result->NextRow());
     }
+
 
     // Clone spells
     result = CharacterDatabase.PQuery(
@@ -1111,29 +1103,39 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
         } while (result->NextRow());
     }
 
-    // Clone skills
-    result = CharacterDatabase.PQuery(
-        "SELECT skill, value, max FROM character_skills WHERE guid = %u", 
-        guid.GetCounter());
-    if (result)
+    // Clone equipment
+    std::istringstream iss(equipmentCache);
+    uint32 itemId, enchantId;
+    uint32 slot = EQUIPMENT_SLOT_START;
+    while (iss >> itemId >> enchantId)
     {
-        do
+        if (slot < EQUIPMENT_SLOT_END)
         {
-            fields = result->Fetch();
-            uint32 skillId = fields[0].GetUInt32();
-            uint32 value = fields[1].GetUInt32();
-            uint32 maxValue = fields[2].GetUInt32();
-            newChar->SetSkill(skillId, value, maxValue);
-        } while (result->NextRow());
+            if (itemId != 0)
+            {
+                // Create and equip the item
+                Item* pItem = newChar->EquipNewItem(slot, itemId, true);
+                if (pItem)
+                {
+                    if (enchantId)
+                    {
+                        pItem->ClearEnchantment(PERM_ENCHANTMENT_SLOT);
+                        pItem->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchantId, 0, 0);
+                        pItem->SetState(ITEM_CHANGED, newChar);
+                        newChar->ApplyEnchantment(pItem, PERM_ENCHANTMENT_SLOT, true);
+                    }
+                }
+                else
+                {
+                    sLog.Out(LOG_BASIC, LOG_LVL_ERROR, "Failed to equip item %u in slot %u", itemId, slot);
+                }
+            }
+            slot++;
+        }
     }
 
-    // Update stats after cloning skills
+    // Update all stats after equipment and skills are set
     newChar->UpdateAllStats();
-    newChar->SetHealth(newChar->GetMaxHealth());
-    newChar->SetPower(POWER_MANA, newChar->GetMaxPower(POWER_MANA));
-    newChar->SetPower(POWER_ENERGY, newChar->GetMaxPower(POWER_ENERGY));
-    newChar->SetPower(POWER_RAGE, 0);
-    newChar->SetPower(POWER_FOCUS, newChar->GetMaxPower(POWER_FOCUS));
 
     // Set the bot as online in the bot manager
     e->state = PB_STATE_ONLINE;
