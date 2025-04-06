@@ -73,7 +73,7 @@ enum
 };
 
 
-bool PlayerBotAI::SpawnNewPlayer(WorldSession* sess, uint8 class_, uint32 race_, uint32 mapId, uint32 instanceId, float x, float y, float z, float o, Player* pClone)
+bool PlayerBotAI::Player(WorldSession* sess, uint8 class_, uint32 race_, uint32 mapId, uint32 instanceId, float x, float y, float z, float o, Player* pClone)
 {
     ASSERT(botEntry);
     std::string name = sObjectMgr.GeneratePetName(1863); // Succubus name

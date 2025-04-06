@@ -5,6 +5,7 @@
 #include "World.h"
 #include "WorldSession.h"
 #include "AccountMgr.h"
+#include "SocialMgr.h"
 #include "Config/Config.h"
 #include "Chat.h"
 #include "Player.h"
@@ -461,6 +462,10 @@ bool PlayerBotMgr::AddBot(uint32 playerGUID, bool chatBot, PlayerBotAI* pAI)
     return true;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
 bool PlayerBotMgr::AddRandomBot()
 {
     uint32 alea = urand(0, m_totalChance);
@@ -956,6 +961,177 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
     return true;
 }
 
+<<<<<<< HEAD
+=======
+bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
+{
+    // Get basic player info from database
+    std::unique_ptr<QueryResult> result = CharacterDatabase.PQuery(
+        "SELECT name, race, class, level, gender, skin, face, hair_style, "
+        "hair_color, facial_hair, equipment_cache FROM characters WHERE guid = %u", guid.GetCounter());
+
+    if (!result)
+        return false;
+    
+    // Parse player info
+    Field* fields = result->Fetch();
+    std::string name = fields[0].GetCppString();
+    uint8 race = fields[1].GetUInt8();
+    uint8 class_ = fields[2].GetUInt8();
+    uint32 level = fields[3].GetUInt32();
+    uint8 gender = fields[4].GetUInt8();
+    uint8 skin = fields[5].GetUInt8();
+    uint8 face = fields[6].GetUInt8();
+    uint8 hairStyle = fields[7].GetUInt8();
+    uint8 hairColor = fields[8].GetUInt8();
+    uint8 facialHair = fields[9].GetUInt8();
+
+    // Calculate spawn position near leader
+    float x, y, z;
+    pPlayer->GetNearPoint(pPlayer, x, y, z, 0, 5.0f, frand(0.0f, 6.0f));
+
+    // Create a new PartyBotAI instance
+    PartyBotAI* pAI = new PartyBotAI(pPlayer, pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
+
+    // Create new bot entry
+    std::shared_ptr<PlayerBotEntry> e = std::make_shared<PlayerBotEntry>();
+    e->state = PB_STATE_LOADING;
+    e->accountId = GenBotAccountId();
+    e->playerGUID = sObjectMgr.GeneratePlayerLowGuid();
+    e->ai.reset(pAI);
+    e->customBot = true;
+    m_bots.insert({ e->playerGUID , e });
+    e->ai->botEntry = e.get();
+
+    // Create a new WorldSession
+    WorldSession* sess = new WorldSession(e->accountId, nullptr, sAccountMgr.GetSecurity(e->accountId), 0, LOCALE_enUS);
+    sess->SetBot(e);
+    sWorld.AddSession(sess);
+    m_stats.loadingCount++;
+    
+    // Create a new Player object
+    Player* newChar = new Player(sess);
+    uint32 pguid = e->playerGUID;
+    if (!newChar->Create(pguid, name, race, class_, gender, skin, face, hairStyle, hairColor, facialHair))
+    {
+        delete newChar;
+        return false;
+    }
+    newChar->SetLocationMapId(pPlayer->GetMapId());
+    newChar->SetLocationInstanceId(pPlayer->GetMap()->GetInstanceId());
+    newChar->SetAutoInstanceSwitch(false);
+    newChar->GetMotionMaster()->Initialize();
+
+    // Set instance
+    if (pPlayer->GetMap()->GetInstanceId() && pPlayer->GetMapId() > 1) // Not a continent
+    {
+        DungeonPersistentState* state = (DungeonPersistentState*)sMapPersistentStateMgr
+                .AddPersistentState(sMapStorage.LookupEntry<MapEntry>(pPlayer->GetMapId()), pPlayer->GetMap()->GetInstanceId(), time(nullptr) + 3600, false, true);
+        newChar->BindToInstance(state, true, true);
+    }
+
+    // Generate position
+    Map* map = sMapMgr.FindMap(pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId());
+    if (!map)
+    {
+        delete newChar;
+        return false;
+    }
+
+    // Insert the new character into the session
+    newChar->Relocate(x, y, z, pPlayer->GetOrientation());
+    sObjectMgr.InsertPlayerInCache(newChar);
+    newChar->SetMap(map);
+    newChar->SaveRecallPosition();
+    newChar->CreatePacketBroadcaster();
+    MasterPlayer* mPlayer = new MasterPlayer(sess);
+    mPlayer->LoadPlayer(newChar);
+    mPlayer->SetSocial(sSocialMgr.LoadFromDB(nullptr, newChar->GetObjectGuid()));
+    if (!newChar->GetMap()->Add(newChar))
+    {
+        delete newChar;
+        return false;
+    }
+    sess->SetPlayer(newChar);
+    sess->SetMasterPlayer(mPlayer);
+    sObjectAccessor.AddObject(newChar);
+    newChar->SetCanModifyStats(true);
+    newChar->UpdateAllStats();
+
+    newChar->SetLevel(level);
+
+    // Set a unique name for the clone
+    std::string botName = name.substr(0, std::min((size_t)7, name.length())) + "clone";
+    newChar->SetName(botName);
+
+    // Parse equipment cache
+    std::string equipmentCache = fields[10].GetCppString();
+    std::istringstream iss(equipmentCache);
+    uint32 itemId, enchantId;
+    uint32 slot = EQUIPMENT_SLOT_START;
+    while (iss >> itemId >> enchantId)
+    {
+        if (slot < EQUIPMENT_SLOT_END)
+        {
+            if (itemId != 0)
+            {
+                // Create and equip the item
+                Item* pItem = newChar->EquipNewItem(slot, itemId, true);
+                if (!pItem)
+                {
+                    sLog.Out(LOG_BASIC, LOG_LVL_ERROR, "Failed to equip item %u in slot %u", itemId, slot);
+                }
+                else if (enchantId)
+                {
+                    pItem->ClearEnchantment(PERM_ENCHANTMENT_SLOT);
+                    pItem->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchantId, 0, 0);
+                }
+            }
+            slot++;
+        }
+    }
+
+
+    // Clone spells
+    result = CharacterDatabase.PQuery(
+        "SELECT spell, active, disabled FROM character_spell WHERE guid = %u", 
+        guid.GetCounter());
+
+    if (result)
+    {
+        do
+        {
+            fields = result->Fetch();
+            uint32 spellId = fields[0].GetUInt32();
+            bool active = fields[1].GetBool();
+            bool disabled = fields[2].GetBool();
+
+            if (active && !disabled)
+                newChar->LearnSpell(spellId, false);
+        } while (result->NextRow());
+    }
+
+    // Clone skills
+    result = CharacterDatabase.PQuery(
+        "SELECT skill, value, max FROM character_skills WHERE guid = %u", 
+        guid.GetCounter());
+
+    if (result)
+    {
+        do
+        {
+            fields = result->Fetch();
+            uint32 skillId = fields[0].GetUInt32();
+            uint32 value = fields[1].GetUInt32();
+            uint32 maxValue = fields[2].GetUInt32();
+            newChar->SetSkill(skillId, value, maxValue);
+        } while (result->NextRow());
+    }
+
+    return true; 
+}
+
+>>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
 bool ChatHandler::HandlePartyBotCloneCommand(char* args)
 {
     Player* pPlayer = GetSession()->GetPlayer();
@@ -964,7 +1140,7 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
 
     Player* pTarget = nullptr;
 
-    PSendSysMessage("Args: '%s'", args ? args : "null");
+    //PSendSysMessage("Args: '%s'", args ? args : "null");
     
     if (!args || strcmp(args, "") == 0)
     {
@@ -1014,73 +1190,34 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
             return false;
         }
 
-        ObjectGuid guid = sObjectMgr.GetPlayerGuidByName(name).GetCounter();
+        ObjectGuid guid = sObjectMgr.GetPlayerGuidByName(name);
         if (!guid)
         {
             SendSysMessage(LANG_PLAYER_NOT_FOUND);
             SetSentErrorMessage(true);
             return false;
         }
+<<<<<<< HEAD
         
         // Get player info from database
         std::unique_ptr<QueryResult> result = CharacterDatabase.PQuery(
             "SELECT race, class, level FROM characters WHERE guid = %u", guid);
         if (!result)
-        {
-            SendSysMessage("Unable to get player info from database.");
-            SetSentErrorMessage(true);
-            return false;
-        }
-        
-        Field* fields = result->Fetch();
-        uint8 race = fields[0].GetUInt8();
-        uint8 class_ = fields[1].GetUInt8();
-        uint32 level = fields[2].GetUInt32();
+=======
 
-        
-        // clone from bill
-        PartyBotAI* ai = new PartyBotAI(pPlayer, nullptr, ROLE_INVALID, race, class_, level, pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), pPlayer->GetPositionX(), pPlayer->GetPositionY(), pPlayer->GetPositionZ(), pPlayer->GetOrientation());
-        if (sPlayerBotMgr.AddBot(ai))
+        if (sPlayerBotMgr.CloneOfflinePlayer(pPlayer, guid))
+>>>>>>> b6ce07956 (Finished implementing CloneOfflinePlayer (extension to the PartyBot clone command))
         {
-            ai->m_cloneGuid = guid;
-            static const char* const classNames[] = {"None", "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"};
-            PSendSysMessage("%s (Level %u %s) added as party bot.", name.c_str(), level, classNames[class_]);
-            PSendSysMessage("Cloned from %s.", name);
+            PSendSysMessage("Cloned from %s.", name.c_str());
             return true;
         }
         else
         {
-            SendSysMessage("Error spawning bot.");
+            SendSysMessage("Error cloning player.");
             SetSentErrorMessage(true);
             return false;
         }
-        return false;
-    }
-
-    PSendSysMessage("Got here");
-
-    uint8 botRace = pTarget->GetRace();
-    uint8 botClass = pTarget->GetClass();
-    uint32 botLevel = pTarget->GetLevel();
-
-    PSendSysMessage("Bot race: %u, bot class: %u, bot level: %u", botRace, botClass, botLevel);
-
-    float x, y, z;
-    pPlayer->GetNearPoint(pPlayer, x, y, z, 0, 5.0f, frand(0.0f, 6.0f));
-
-    // Create a new bot instance with the target's race/class
-    PartyBotAI* ai = new PartyBotAI(pPlayer, pTarget, ROLE_INVALID, botRace, botClass, botLevel, pPlayer->GetMapId(), pPlayer->GetMap()->GetInstanceId(), x, y, z, pPlayer->GetOrientation());
-    if (sPlayerBotMgr.AddBot(ai))
-    {
-        static const char* const classNames[] = {"None", "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"};
-        PSendSysMessage("%s (Level %u %s) added as party bot.", pTarget->GetName(), botLevel, classNames[botClass]);
-        return true;
-    }
-    else
-    {
-        SendSysMessage("Error spawning bot.");
-        SetSentErrorMessage(true);
-        return false;
+        
     }
 }
 

@@ -3509,11 +3509,23 @@ void PartyBotAI::RepositionMeleeDps()
                     newAngle = rightAngle;
             }
             
+            // Calculate the new position on the circumference of the target's hitbox circle
             float newX = pVictim->GetPositionX() + cos(newAngle) * (targetReach + 0.5f);
             float newY = pVictim->GetPositionY() + sin(newAngle) * (targetReach + 0.5f);
             float newZ = pVictim->GetPositionZ();
             
-            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ);
+            // Make sure the new position is within the map bounds
+            if (!MaNGOS::IsValidMapCoord(newX, newY, newZ)) return;
+            
+            // Don't attempt to move up too steep a slope (max 60 degrees)
+            float xyDistance = sqrt(pow(newX - me->GetPositionX(), 2) + pow(newY - me->GetPositionY(), 2));
+            float zDelta = fabs(newZ - me->GetPositionZ());
+            float maxZRatio = 1.732f;
+            if (zDelta > xyDistance * maxZRatio) return;
+            
+            // Update the ground position and move to the new position
+            me->UpdateGroundPositionZ(newX, newY, newZ);
+            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES);
         }
     }
 }
