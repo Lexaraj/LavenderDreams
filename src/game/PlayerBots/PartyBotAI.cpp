@@ -662,7 +662,10 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SPAWNING);
         SummonPetIfNeeded();
         me->SetHealthPercent(100.0f);
-        me->SetPowerPercent(me->GetPowerType(), 100.0f);
+        if(me->GetPowerType() == POWER_RAGE)
+            me->SetPowerPercent(POWER_RAGE, 0.0f);
+        else
+            me->SetPowerPercent(me->GetPowerType(), 100.0f);
 
         uint32 newzone, newarea;
         me->GetZoneAndAreaId(newzone, newarea);
