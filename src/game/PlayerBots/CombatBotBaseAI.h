@@ -311,6 +311,7 @@ public:
             SpellEntry const* pHolyShield;
             SpellEntry const* pSacredStrike;
             SpellEntry const* pRepentance;
+            SpellEntry const* pGeas;
         } paladin;
         struct
         {

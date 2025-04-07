@@ -406,6 +406,11 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.paladin.pRepentance))
                         m_spells.paladin.pRepentance = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Geas") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.paladin.pGeas))
+                        m_spells.paladin.pGeas = pSpellEntry;
+                }
                 break;
             }
             case CLASS_SHAMAN:
