@@ -396,6 +396,16 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.paladin.pHolyShield))
                         m_spells.paladin.pHolyShield = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Sacred Strike") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.paladin.pSacredStrike))
+                        m_spells.paladin.pSacredStrike = pSpellEntry;
+                }
+                else if (pSpellEntry->SpellName[0].find("Repentance") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.paladin.pRepentance))
+                        m_spells.paladin.pRepentance = pSpellEntry;
+                }
                 break;
             }
             case CLASS_SHAMAN:

@@ -309,6 +309,8 @@ public:
             SpellEntry const* pHolyWrath;
             SpellEntry const* pTurnEvil;
             SpellEntry const* pHolyShield;
+            SpellEntry const* pSacredStrike;
+            SpellEntry const* pRepentance;
         } paladin;
         struct
         {
