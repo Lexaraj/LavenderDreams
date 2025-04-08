@@ -1662,6 +1662,9 @@ void CombatBotBaseAI::PopulateSpellData()
             if (pBlessingOfSanctuary && m_role == ROLE_TANK)
                 m_spells.paladin.pBlessingBuff = pBlessingOfSanctuary;
             else
+            if (pBlessingOfKings)
+                m_spells.paladin.pBlessingBuff = pBlessingOfKings;
+            else    
             {
                 std::vector<SpellEntry const*> blessings;
                 if (pBlessingOfLight)
@@ -1670,32 +1673,30 @@ void CombatBotBaseAI::PopulateSpellData()
                     blessings.push_back(pBlessingOfMight);
                 if (pBlessingOfWisdom)
                     blessings.push_back(pBlessingOfWisdom);
-                if (pBlessingOfKings)
-                    blessings.push_back(pBlessingOfKings);
-                if (pBlessingOfSanctuary)
-                    blessings.push_back(pBlessingOfSanctuary);
                 if (!blessings.empty())
                     m_spells.paladin.pBlessingBuff = SelectRandomContainerElement(blessings);
             }
-
-            std::vector<SpellEntry const*> auras;
-            if (pDevotionAura)
-                auras.push_back(pDevotionAura);
-            if (pConcentrationAura)
-                auras.push_back(pConcentrationAura);
-            if (pRetributionAura)
-                auras.push_back(pRetributionAura);
-            if (pSanctityAura)
-                auras.push_back(pSanctityAura);
-            if (pShadowResistanceAura)
-                auras.push_back(pShadowResistanceAura);
-            if (pFrostResistanceAura)
-                auras.push_back(pFrostResistanceAura);
-            if (pFireResistanceAura)
-                auras.push_back(pFireResistanceAura);
-            if (!auras.empty())
-                m_spells.paladin.pAura = SelectRandomContainerElement(auras);
-
+            if (pDevotionAura && m_role == ROLE_TANK)
+                m_spells.paladin.pAura = pDevotionAura;
+            else if (pConcentrationAura && m_role == ROLE_HEALER)
+                m_spells.paladin.pAura = pConcentrationAura;
+            else if (pSanctityAura && m_role == ROLE_MELEE_DPS)
+                m_spells.paladin.pAura = pSanctityAura;
+            else if (pRetributionAura && m_role == ROLE_MELEE_DPS)
+                m_spells.paladin.pAura = pRetributionAura;    
+            else         
+            {   std::vector<SpellEntry const*> auras;
+                if (pRetributionAura)
+                    auras.push_back(pRetributionAura);
+                if (pShadowResistanceAura)
+                    auras.push_back(pShadowResistanceAura);
+                if (pFrostResistanceAura)
+                    auras.push_back(pFrostResistanceAura);
+                if (pFireResistanceAura)
+                    auras.push_back(pFireResistanceAura);
+                if (!auras.empty())
+                    m_spells.paladin.pAura = SelectRandomContainerElement(auras);
+            }
             break;
         }
         case CLASS_SHAMAN:

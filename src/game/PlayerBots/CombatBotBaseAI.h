@@ -312,6 +312,9 @@ public:
             SpellEntry const* pSacredStrike;
             SpellEntry const* pRepentance;
             SpellEntry const* pGeas;
+            SpellEntry const* pDevotionAura;
+            SpellEntry const* pConcentrationAura;
+            SpellEntry const* pSanctityAura;
         } paladin;
         struct
         {

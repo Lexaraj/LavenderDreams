@@ -1130,7 +1130,7 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
                 return;
         }
         if (m_spells.paladin.pLayOnHands &&
-           (pFriend->GetHealthPercent() < 15.0f) &&
+           (pFriend->GetHealthPercent() < 15.0f) && (me->GetPowerPercent(POWER_MANA) <5.0f) &&
             CanTryToCastSpell(pFriend, m_spells.paladin.pLayOnHands))
         {
             if (DoCastSpell(pFriend, m_spells.paladin.pLayOnHands) == SPELL_CAST_OK)
@@ -1197,7 +1197,7 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
     else
     {
         if (m_spells.paladin.pLayOnHands &&
-           (me->GetHealthPercent() < 15.0f) &&
+           (me->GetHealthPercent() < 15.0f) && (me->GetPowerPercent(POWER_MANA) < 5.0f) &&
             CanTryToCastSpell(me, m_spells.paladin.pLayOnHands))
         {
             if (DoCastSpell(me, m_spells.paladin.pLayOnHands) == SPELL_CAST_OK)
@@ -1216,7 +1216,6 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
         if (Unit* pVictim = me->GetVictim())
         {
             if (hasSeal && m_spells.paladin.pJudgement &&
-               (me->GetPowerPercent(POWER_MANA) > 30.0f) &&
                 CanTryToCastSpell(pVictim, m_spells.paladin.pJudgement))
             {
                 if (DoCastSpell(pVictim, m_spells.paladin.pJudgement) == SPELL_CAST_OK)
@@ -1237,19 +1236,26 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
                     return;
             }
             if (m_spells.paladin.pHammerOfWrath &&
-                pVictim->GetHealthPercent() < 20.0f &&
+                pVictim->GetHealthPercent() < 20.0f && m_role == ROLE_MELEE_DPS &&
                 CanTryToCastSpell(pVictim, m_spells.paladin.pHammerOfWrath))
             {
                 if (DoCastSpell(pVictim, m_spells.paladin.pHammerOfWrath) == SPELL_CAST_OK)
                     return;
             }
-            if (m_spells.paladin.pConsecration &&
-               (GetAttackersInRangeCount(10.0f) > 2) &&
+            if (m_spells.paladin.pConsecration && m_role == ROLE_TANK &&
+               (GetAttackersInRangeCount(10.0f) > 1) &&
                 CanTryToCastSpell(me, m_spells.paladin.pConsecration))
             {
                 if (DoCastSpell(me, m_spells.paladin.pConsecration) == SPELL_CAST_OK)
                     return;
             }
+            if (m_spells.paladin.pConsecration && m_role == ROLE_MELEE_DPS &&
+                (GetAttackersInRangeCount(10.0f) > 3) &&
+                 CanTryToCastSpell(me, m_spells.paladin.pConsecration))
+            {
+                if (DoCastSpell(me, m_spells.paladin.pConsecration) == SPELL_CAST_OK)
+                  return;
+            }                  
             if (m_spells.paladin.pHolyShock &&
                 CanTryToCastSpell(pVictim, m_spells.paladin.pHolyShock))
             {
@@ -2614,11 +2620,9 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if ((me->GetHealthPercent() < 20.0f) ||
-            (m_role == ROLE_TANK && pVictim->GetLevel() >= me->GetLevel()))
+        if (m_spells.warrior.pDefensiveStance && m_role == ROLE_TANK && 
+            CanTryToCastSpell(me, m_spells.warrior.pDefensiveStance))
         {
-            if (m_spells.warrior.pDefensiveStance &&
-                CanTryToCastSpell(me, m_spells.warrior.pDefensiveStance))
             {
                 DoCastSpell(me, m_spells.warrior.pDefensiveStance);
             }
