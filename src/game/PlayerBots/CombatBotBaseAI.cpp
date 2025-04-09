@@ -1235,6 +1235,11 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.warrior.pPiercingHowl))
                         m_spells.warrior.pPiercingHowl = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Revenge") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.warrior.pRevenge))
+                        m_spells.warrior.pRevenge = pSpellEntry;
+                }                
                 break;
             }
             case CLASS_ROGUE:
@@ -1661,8 +1666,7 @@ void CombatBotBaseAI::PopulateSpellData()
 
             if (pBlessingOfSanctuary && m_role == ROLE_TANK)
                 m_spells.paladin.pBlessingBuff = pBlessingOfSanctuary;
-            else
-            if (pBlessingOfKings)
+            else if (pBlessingOfKings)
                 m_spells.paladin.pBlessingBuff = pBlessingOfKings;
             else    
             {
@@ -1680,10 +1684,14 @@ void CombatBotBaseAI::PopulateSpellData()
                 m_spells.paladin.pAura = pDevotionAura;
             else if (pConcentrationAura && m_role == ROLE_HEALER)
                 m_spells.paladin.pAura = pConcentrationAura;
+            else if (pDevotionAura && m_role == ROLE_HEALER)
+                m_spells.paladin.pAura = pDevotionAura;                
             else if (pSanctityAura && m_role == ROLE_MELEE_DPS)
                 m_spells.paladin.pAura = pSanctityAura;
             else if (pRetributionAura && m_role == ROLE_MELEE_DPS)
-                m_spells.paladin.pAura = pRetributionAura;    
+                m_spells.paladin.pAura = pRetributionAura;  
+            else if (pDevotionAura && m_role == ROLE_MELEE_DPS)
+                m_spells.paladin.pAura = pDevotionAura;                  
             else         
             {   std::vector<SpellEntry const*> auras;
                 if (pRetributionAura)

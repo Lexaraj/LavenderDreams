@@ -2428,13 +2428,6 @@ void PartyBotAI::UpdateOutOfCombatAI_Warrior()
             return;
     }
 
-    if (m_spells.warrior.pBattleShout &&
-       !me->HasAura(m_spells.warrior.pBattleShout->Id) &&
-       me->GetPower(POWER_RAGE) >= 10)
-    {
-        if (CanTryToCastSpell(me, m_spells.warrior.pBattleShout))
-            DoCastSpell(me, m_spells.warrior.pBattleShout);
-    }
     if (Unit* pVictim = me->GetVictim())
     {
         if (m_spells.warrior.pCharge &&
@@ -2468,7 +2461,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
             }
         }
 
-        if (m_spells.warrior.pExecute &&
+        if (m_spells.warrior.pExecute && m_role == ROLE_MELEE_DPS &&
            (pVictim->GetHealthPercent() < 20.0f) &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pExecute))
         {
@@ -2476,7 +2469,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if (m_spells.warrior.pOverpower &&
+        if (m_spells.warrior.pOverpower && m_role != ROLE_TANK &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pOverpower))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pOverpower) == SPELL_CAST_OK)
@@ -2484,7 +2477,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
         }
 
         if (m_spells.warrior.pLastStand &&
-            me->GetHealthPercent() < 20.0f &&
+            me->GetHealthPercent() < 30.0f &&
             CanTryToCastSpell(me, m_spells.warrior.pLastStand))
         {
             if (DoCastSpell(me, m_spells.warrior.pLastStand) == SPELL_CAST_OK)
@@ -2528,13 +2521,13 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
             }
         }
 
-        if (m_spells.warrior.pThunderClap &&
+        /*if (m_spells.warrior.pThunderClap &&
             m_role == ROLE_TANK &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pThunderClap))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pThunderClap) == SPELL_CAST_OK)
                 return;
-        }
+        }*/
 
         if (m_spells.warrior.pSunderArmor &&
             m_role == ROLE_TANK &&
@@ -2544,7 +2537,15 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if (m_spells.warrior.pHamstring &&
+        if (m_spells.warrior.pRevenge &&
+            m_role == ROLE_TANK &&
+            CanTryToCastSpell(pVictim, m_spells.warrior.pRevenge))
+        {
+            if (DoCastSpell(pVictim, m_spells.warrior.pRevenge) == SPELL_CAST_OK)
+                return;
+        }
+
+        /*if (m_spells.warrior.pHamstring &&
             pVictim->IsMoving() &&
            !pVictim->HasUnitState(UNIT_STATE_ROOT) &&
            !pVictim->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) &&
@@ -2552,23 +2553,23 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pHamstring) == SPELL_CAST_OK)
                 return;
-        }
+        }*/
 
-        if (m_spells.warrior.pRend &&
+        /*if (m_spells.warrior.pRend &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pRend))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pRend) == SPELL_CAST_OK)
                 return;
-        }
+        }*/
 
-        if (m_spells.warrior.pIntimidatingShout &&
+        /*if (m_spells.warrior.pIntimidatingShout &&
            (me->GetHealthPercent() < 30.0f) &&
            (GetAttackersInRangeCount(10.0f) > 2) &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pIntimidatingShout))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pIntimidatingShout) == SPELL_CAST_OK)
                 return;
-        }
+        }*/
 
         if (m_spells.warrior.pRetaliation &&
            (GetAttackersInRangeCount(10.0f) > 2) &&
@@ -2629,7 +2630,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
         }
         else
         {
-            if (m_spells.warrior.pBerserkerStance &&
+            if (m_spells.warrior.pBerserkerStance && m_role == ROLE_MELEE_DPS &&
                 CanTryToCastSpell(me, m_spells.warrior.pBerserkerStance))
             {
                 DoCastSpell(me, m_spells.warrior.pBerserkerStance);
@@ -2643,7 +2644,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if (m_spells.warrior.pWhirlwind &&
+        if (m_spells.warrior.pWhirlwind && m_role == ROLE_MELEE_DPS &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pWhirlwind))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pWhirlwind) == SPELL_CAST_OK)
@@ -2666,6 +2667,7 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
+        
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
             && !me->CanReachWithMeleeAutoAttack(pVictim))
         {

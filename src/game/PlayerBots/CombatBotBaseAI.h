@@ -315,6 +315,7 @@ public:
             SpellEntry const* pDevotionAura;
             SpellEntry const* pConcentrationAura;
             SpellEntry const* pSanctityAura;
+            SpellEntry const* pBlessingOfSanctuary;
         } paladin;
         struct
         {
@@ -475,6 +476,7 @@ public:
             SpellEntry const* pSunderArmor;
             SpellEntry const* pConcussionBlow;
             SpellEntry const* pPiercingHowl;
+            SpellEntry const* pRevenge;
         } warrior;
         struct
         {
