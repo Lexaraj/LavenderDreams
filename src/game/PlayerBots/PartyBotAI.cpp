@@ -741,6 +741,18 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                 me->ResurrectPlayer(0.5f);
                 me->SpawnCorpseBones();
                 me->CastSpell(me, PB_SPELL_HONORLESS_TARGET, true);
+                return;
+            }
+
+            if(ShouldReviveWithOwner() && !pLeader->IsDead())
+            {
+                me->ResurrectPlayer(0.5f);
+                me->SpawnCorpseBones();
+                me->CastSpell(me, PB_SPELL_HONORLESS_TARGET, true);
+                float x, y, z;
+                pLeader->GetNearPoint(pLeader, x, y, z, 0, frand(3.0f, 5.0f), frand(3.0f, 5.0f));
+                me->TeleportTo(pLeader->GetMapId(), x, y, z, pLeader->GetOrientation());
+                return;
             }
         }
         
@@ -802,15 +814,19 @@ void PartyBotAI::UpdateAI(uint32 const diff)
 
         // Teleport to leader if too far away.
         if (!me->IsWithinDistInMap(pLeader, 100.0f) && !IsInDuel())
-        {
+        {   // Unless the leader is dead
+            if(!pLeader->IsDead())
+            {  
             if (!me->IsStopped())
-                me->StopMoving();
-            me->GetMotionMaster()->Clear(false, true);
-            me->GetMotionMaster()->MoveIdle();
-            char name[128] = {};
-            strcpy(name, pLeader->GetName());
-            ChatHandler(me).HandleGonameCommand(name);
-            return;
+                    me->StopMoving();
+                me->GetMotionMaster()->Clear(false, true);
+                me->GetMotionMaster()->MoveIdle();
+                char name[128] = {};
+                strcpy(name, pLeader->GetName());
+                ChatHandler(me).HandleGonameCommand(name);
+                return;
+            }
+            
         }
     }
 
@@ -3544,3 +3560,25 @@ void PartyBotAI::RepositionMeleeDps()
         }
     }
 }
+
+bool PartyBotAI::ShouldReviveWithOwner()
+{
+    Player* pLeader = GetPartyLeader();
+    if(!pLeader)
+        return false;
+
+    if(pLeader->GetDeathState() == DEAD)
+    {
+        m_leaderReleased = true;
+        return false;
+    }
+    
+    if(m_leaderReleased && pLeader->GetDeathState() == ALIVE)
+    {
+        m_leaderReleased = false;
+        return true;
+    }
+    
+    return false;
+}
+
