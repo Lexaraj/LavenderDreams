@@ -65,7 +65,7 @@ struct DruidFerociousBiteScript : SpellScript
             int32 dmg = pPlayer->GetPower(POWER_ENERGY) * spell->m_spellInfo->DmgMultiplier[effIdx];
             pPlayer->CastCustomSpell(spell->GetUnitTarget(), damageSpellId, dmg, {}, {}, true);
 #endif
-            //pPlayer->SetPower(POWER_ENERGY, 0);
+            //pPlayer->SetPower(POWER_ENERGY, 0); //Lavender Dreams - Does not drain all energy
         }
         return true;
     }
@@ -143,7 +143,7 @@ struct DruidSwiftmendScript : SpellScript
                 tickcount = 4;
 
             // consumes Regrowth or Rejuvenation
-            spell->GetUnitTarget()->RemoveAurasDueToSpell(targetAura->GetId());
+            //spell->GetUnitTarget()->RemoveAurasDueToSpell(targetAura->GetId()); //Lavender Dreams - Does not consume hot from target
 
             spell->damage += tickheal * tickcount;
         }

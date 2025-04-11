@@ -183,7 +183,7 @@ struct PaladinReckoningScript : SpellScript
             // It was possible to stack infinite extra attacks in early vanilla.
             // https://www.youtube.com/watch?v=TqPQ4SNmx2c
 #if SUPPORTED_CLIENT_BUILD > CLIENT_BUILD_1_4_2
-            if (spell->GetUnitTarget()->GetExtraAttacks() < 4)
+            if (spell->GetUnitTarget()->GetExtraAttacks() < 3)
 #endif
                 spell->GetUnitTarget()->AddExtraAttack();
 
