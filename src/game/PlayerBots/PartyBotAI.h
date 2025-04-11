@@ -95,6 +95,7 @@ public:
     bool IsStaying() const { return m_isStaying; }
     void SetStaying(bool staying);
     void RepositionMeleeDps();
+    bool ShouldReviveWithOwner();
 
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;
@@ -112,6 +113,7 @@ public:
     float m_o = 0.0f;
     bool m_resetSpellData = false;
     bool m_isStaying = false;
+    bool m_leaderReleased = false;
 };
 
 #endif
