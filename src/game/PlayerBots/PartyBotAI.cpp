@@ -913,8 +913,18 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         {
             if (!m_isStaying)
             {
-                if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
-                    me->GetMotionMaster()->MoveFollow(pLeader, urand(PB_MIN_FOLLOW_DIST, PB_MAX_FOLLOW_DIST), frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                if (GetRole() == ROLE_HEALER && pLeader->GetVictim() && me->IsWithinDistInMap(pLeader, 10.0f))
+                {
+                    if (RunAwayFromTarget(pLeader->GetVictim()))
+                        me->GetMotionMaster()->MoveFollow(pLeader, 25.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                        return;
+                }
+                else
+                {
+                    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
+                        me->GetMotionMaster()->MoveFollow(pLeader, urand(PB_MIN_FOLLOW_DIST, PB_MAX_FOLLOW_DIST), frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                }
+                
             }
         }
         else
@@ -935,7 +945,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                         float chaseDistance = isMeleeDpsOrTank ? 0.0f : 25.0f;
                         if (!isMeleeDpsOrTank)
                             me->SetCasterChaseDistance(chaseDistance);
-                            
+
                         me->GetMotionMaster()->MoveChase(pVictim, chaseDistance);
                         break;
                 }
