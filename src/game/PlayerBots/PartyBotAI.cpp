@@ -336,6 +336,18 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
     if (me->IsMounted())
         me->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
+    if (GetRole() == ROLE_HEALER)
+    {
+        if (!m_isStaying) {
+            me->SetCasterChaseDistance(25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
+        } else {
+            me->GetMotionMaster()->Clear(false, true);
+            me->GetMotionMaster()->MoveIdle();
+        }
+        return true;
+    }
+
     if (me->Attack(pVictim, true))
     {
         if (GetRole() == ROLE_RANGE_DPS &&
@@ -353,6 +365,7 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
             }
             else
             {
+                me->SetCasterChaseDistance(GetRole() == ROLE_TANK ? 0.0f : 25.0f);
                 me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
             }
         }
