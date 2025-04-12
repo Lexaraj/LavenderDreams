@@ -1146,9 +1146,16 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
 
 bool ChatHandler::HandlePartyBotCloneCommand(char* args)
 {
+    
     Player* pPlayer = GetSession()->GetPlayer();
     if (!pPlayer)
         return false;
+
+    // Must be resting or inside dungeon to summon bot
+    if (!pPlayer->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && !pPlayer->GetMap()->IsDungeon()) {
+        SendSysMessage("You must be resting or inside a dungeon to summon bots.");
+        return false;
+    }
 
     Player* pTarget = nullptr;
 
