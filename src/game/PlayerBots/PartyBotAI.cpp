@@ -749,22 +749,22 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         }
         else
         {
-            if (ShouldAutoRevive())
-            {
-                me->ResurrectPlayer(0.5f);
-                me->SpawnCorpseBones();
-                me->CastSpell(me, PB_SPELL_HONORLESS_TARGET, true);
-                return;
-            }
-
             if(ShouldReviveWithOwner() && !pLeader->IsDead())
             {
                 me->ResurrectPlayer(0.5f);
                 me->SpawnCorpseBones();
                 me->CastSpell(me, PB_SPELL_HONORLESS_TARGET, true);
                 float x, y, z;
-                pLeader->GetNearPoint(pLeader, x, y, z, 0, frand(3.0f, 5.0f), frand(3.0f, 5.0f));
+                pLeader->GetNearPoint(pLeader, x, y, z, 0, frand(5.0f, 8.0f), frand(0.0f, 3.0f));
                 me->TeleportTo(pLeader->GetMapId(), x, y, z, pLeader->GetOrientation());
+                return;
+            }
+
+            if (ShouldAutoRevive())
+            {
+                me->ResurrectPlayer(0.5f);
+                me->SpawnCorpseBones();
+                me->CastSpell(me, PB_SPELL_HONORLESS_TARGET, true);
                 return;
             }
         }
@@ -931,7 +931,12 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                 {
                     case IDLE_MOTION_TYPE:
                     case FOLLOW_MOTION_TYPE:
-                        me->GetMotionMaster()->MoveChase(pVictim);
+                        bool isMeleeDpsOrTank = (GetRole() == ROLE_MELEE_DPS || GetRole() == ROLE_TANK);
+                        float chaseDistance = isMeleeDpsOrTank ? 0.0f : 25.0f;
+                        if (!isMeleeDpsOrTank)
+                            me->SetCasterChaseDistance(chaseDistance);
+                            
+                        me->GetMotionMaster()->MoveChase(pVictim, chaseDistance);
                         break;
                 }
             }
@@ -3572,7 +3577,7 @@ void PartyBotAI::RepositionMeleeDps()
             
             // Update the ground position and move to the new position
             me->UpdateGroundPositionZ(newX, newY, newZ);
-            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES);
+            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, me->GetAngle(pVictim));
         }
     }
 }
