@@ -913,11 +913,10 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         {
             if (!m_isStaying)
             {
-                if (GetRole() == ROLE_HEALER && pLeader->GetVictim() && me->IsWithinDistInMap(pLeader, 10.0f))
+                if (GetRole() == ROLE_HEALER)
                 {
-                    if (RunAwayFromTarget(pLeader->GetVictim()))
-                        me->GetMotionMaster()->MoveFollow(pLeader, 25.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
-                        return;
+                    me->GetMotionMaster()->MoveFollow(pLeader, 15.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                    return;
                 }
                 else
                 {
@@ -3576,8 +3575,35 @@ void PartyBotAI::RepositionMeleeDps()
             float newY = pVictim->GetPositionY() + sin(newAngle) * (targetReach + 0.5f);
             float newZ = pVictim->GetPositionZ();
             
-            // Make sure the new position is within the map bounds
-            if (!MaNGOS::IsValidMapCoord(newX, newY, newZ)) return;
+            // Check if the new position is within valid map boundaries
+            Map* map = me->GetMap();
+            if (!map)
+                return;
+
+            // Check if the position is valid by getting the ground height
+            float groundZ = map->GetHeight(newX, newY, newZ);
+            if (groundZ <= INVALID_HEIGHT)
+                return;
+
+            // Sample points along the path to check for obstacles
+            float currentZ = me->GetPositionZ();
+            const int samples = 5;
+            for (int i = 1; i <= samples; ++i)
+            {
+                float t = float(i) / float(samples);
+                float checkX = currentX + (newX - currentX) * t;
+                float checkY = currentY + (newY - currentY) * t;
+                float checkZ = currentZ + (newZ - currentZ) * t;
+
+                // Check if this point is valid
+                float checkGroundZ = map->GetHeight(checkX, checkY, checkZ);
+                if (checkGroundZ <= INVALID_HEIGHT)
+                    return;
+
+                // Check if there's a significant height difference that might indicate a wall
+                if (std::abs(checkGroundZ - checkZ) > 2.0f)
+                    return;
+            }
             
             // Don't attempt to move up too steep a slope (max 60 degrees)
             float xyDistance = sqrt(pow(newX - me->GetPositionX(), 2) + pow(newY - me->GetPositionY(), 2));
