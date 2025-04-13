@@ -182,14 +182,25 @@ bool PartyBotAI::RunAwayFromTarget(Unit* pEnemy)
 
 bool PartyBotAI::DrinkAndEat()
 {
+    
     if (m_isBuffing)
         return false;
+
+    Group* pGroup = me->GetGroup();
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        if (Player* pMember = itr->getSource())
+        {
+            if (pMember->IsInCombat() && pMember->GetHealthPercent() < 80.0f)
+                return false;
+        }
+    }
 
     if (me->GetVictim())
         return false;
 
-    bool const needToEat = me->GetHealthPercent() < 100.0f;
-    bool const needToDrink = (me->GetPowerType() == POWER_MANA) && (me->GetPowerPercent(POWER_MANA) < 100.0f);
+    bool const needToEat = me->GetHealthPercent() < 95.0f;
+    bool const needToDrink = (me->GetPowerType() == POWER_MANA) && (me->GetPowerPercent(POWER_MANA) < 95.0f);
 
     if (!needToEat && !needToDrink)
         return false;
@@ -913,9 +924,9 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         {
             if (!m_isStaying)
             {
-                if (GetRole() == ROLE_HEALER)
+                if (GetRole() == ROLE_HEALER && !pLeader->IsInCombat())
                 {
-                    me->GetMotionMaster()->MoveFollow(pLeader, 15.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                    me->GetMotionMaster()->MoveFollow(pLeader, 10.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
                     return;
                 }
                 else
