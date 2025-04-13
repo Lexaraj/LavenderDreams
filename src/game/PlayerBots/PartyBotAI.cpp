@@ -913,11 +913,10 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         {
             if (!m_isStaying)
             {
-                if (GetRole() == ROLE_HEALER && pLeader->GetVictim() && me->IsWithinDistInMap(pLeader, 10.0f))
+                if (GetRole() == ROLE_HEALER)
                 {
-                    if (RunAwayFromTarget(pLeader->GetVictim()))
-                        me->GetMotionMaster()->MoveFollow(pLeader, 25.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
-                        return;
+                    me->GetMotionMaster()->MoveFollow(pLeader, 15.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                    return;
                 }
                 else
                 {
