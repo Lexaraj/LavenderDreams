@@ -480,6 +480,8 @@ Player* PartyBotAI::SelectResurrectionTarget() const
         return nullptr;
 
     Group* pGroup = me->GetGroup();
+
+    // First check for players who can resurrect
     for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
     {
         if (Player* pMember = itr->getSource())
@@ -494,8 +496,36 @@ Player* PartyBotAI::SelectResurrectionTarget() const
             if (!me->IsWithinLOSInMap(pMember))
                 continue;
 
-            if (m_resurrectionSpell->IsTargetInRange(me, pMember))
+            if (!m_resurrectionSpell->IsTargetInRange(me, pMember))
+                continue;
+
+            // Check if this player has resurrection abilities
+            if (pMember->GetClass() == CLASS_PALADIN || pMember->GetClass() == CLASS_PRIEST || 
+                pMember->GetClass() == CLASS_SHAMAN || pMember->GetClass() == CLASS_DRUID)
+            {
                 return pMember;
+            }
+        }
+    }
+
+    // Then look for any other dead players
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        if (Player* pMember = itr->getSource())
+        {
+            if (pMember == me)
+                continue;
+
+            if (pMember->GetDeathState() != CORPSE)
+                continue;
+
+            if (!me->IsWithinLOSInMap(pMember))
+                continue;
+
+            if (!m_resurrectionSpell->IsTargetInRange(me, pMember))
+                continue;
+
+            return pMember;
         }
     }
 
