@@ -1146,6 +1146,18 @@ void PartyBotAI::UpdateInCombatAI()
 
 void PartyBotAI::UpdateOutOfCombatAI_Paladin()
 {
+    if (m_spells.paladin.pCleanse)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.paladin.pCleanse))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.paladin.pCleanse))
+            {
+                if (DoCastSpell(pFriend, m_spells.paladin.pCleanse) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+
     if (m_spells.paladin.pAura &&
         CanTryToCastSpell(me, m_spells.paladin.pAura))
     {
@@ -1225,18 +1237,6 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
         }
     }
 
-    if (m_spells.paladin.pCleanse)
-    {
-        if (Unit* pFriend = SelectDispelTarget(m_spells.paladin.pCleanse))
-        {
-            if (CanTryToCastSpell(pFriend, m_spells.paladin.pCleanse))
-            {
-                if (DoCastSpell(pFriend, m_spells.paladin.pCleanse) == SPELL_CAST_OK)
-                    return;
-            }
-        }
-    }
-
     if (!me->GetAttackers().empty())
     {
         if (m_spells.paladin.pHolyShield &&
@@ -1280,6 +1280,19 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
 
         if (FindAndPreHealTarget())
             return;
+
+        if (m_spells.paladin.pCleanse)
+        {
+            if (Unit* pFriend = SelectDispelTarget(m_spells.paladin.pCleanse))
+            {
+                if (CanTryToCastSpell(pFriend, m_spells.paladin.pCleanse))
+                {
+                    if (DoCastSpell(pFriend, m_spells.paladin.pCleanse) == SPELL_CAST_OK)
+                        return;
+                }
+            }
+        }    
+            
     }
     else
     {
@@ -1728,6 +1741,18 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
 
 void PartyBotAI::UpdateOutOfCombatAI_Mage()
 {
+    if (m_spells.mage.pRemoveLesserCurse)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.mage.pRemoveLesserCurse))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.mage.pRemoveLesserCurse))
+            {
+                if (DoCastSpell(pFriend, m_spells.mage.pRemoveLesserCurse) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+
     if (m_spells.mage.pArcaneBrilliance)
     {
         // Check each member of the group to see if they have Arcane Brilliance
@@ -2007,6 +2032,29 @@ void PartyBotAI::UpdateInCombatAI_Mage()
 
 void PartyBotAI::UpdateOutOfCombatAI_Priest()
 {
+    if (m_spells.priest.pDispelMagic)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.priest.pDispelMagic))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.priest.pDispelMagic))
+            {
+                if (DoCastSpell(pFriend, m_spells.priest.pDispelMagic) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+    if (m_spells.priest.pAbolishDisease)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.priest.pAbolishDisease))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.priest.pAbolishDisease))
+            {
+                if (DoCastSpell(pFriend, m_spells.priest.pAbolishDisease) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+
     if (m_spells.priest.pPrayerofFortitude)
     {
         if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
