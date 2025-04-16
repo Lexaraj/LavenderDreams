@@ -2448,7 +2448,8 @@ void PartyBotAI::UpdateInCombatAI_Warlock()
         }
 
         if (m_spells.warlock.pFear &&
-            CanTryToCastSpell(pVictim, m_spells.warlock.pFear))
+            CanTryToCastSpell(pVictim, m_spells.warlock.pFear) &&
+            me->GetMap() && !me->GetMap()->IsDungeon())
         {
             if (DoCastSpell(pVictim, m_spells.warlock.pFear) == SPELL_CAST_OK)
                 return;
