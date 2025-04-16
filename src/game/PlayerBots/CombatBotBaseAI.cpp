@@ -2339,7 +2339,8 @@ void CombatBotBaseAI::SummonPetIfNeeded()
         std::vector<uint32> vSummons;
         if (me->HasSpell(SPELL_SUMMON_IMP))
             vSummons.push_back(SPELL_SUMMON_IMP);
-        if (me->HasSpell(SPELL_SUMMON_VOIDWALKER))
+        if (me->HasSpell(SPELL_SUMMON_VOIDWALKER) &&
+            me->GetMap() && !me->GetMap()->IsDungeon())
             vSummons.push_back(SPELL_SUMMON_VOIDWALKER);
         if (me->HasSpell(SPELL_SUMMON_FELHUNTER))
             vSummons.push_back(SPELL_SUMMON_FELHUNTER);
