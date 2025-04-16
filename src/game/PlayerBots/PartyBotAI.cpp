@@ -956,7 +956,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
             {
                 if (GetRole() == ROLE_HEALER && !pLeader->IsInCombat())
                 {
-                    me->GetMotionMaster()->MoveFollow(pLeader, 10.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
+                    me->GetMotionMaster()->MoveFollow(pLeader, 12.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
                     return;
                 }
                 else
@@ -2006,7 +2006,30 @@ void PartyBotAI::UpdateInCombatAI_Mage()
 }
 
 void PartyBotAI::UpdateOutOfCombatAI_Priest()
-{
+{   if (m_spells.priest.pDispelMagic)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.priest.pDispelMagic))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.priest.pDispelMagic))
+            {
+                if (DoCastSpell(pFriend, m_spells.priest.pDispelMagic) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+    if (m_spells.priest.pAbolishDisease)
+    {
+        if (Unit* pFriend = SelectDispelTarget(m_spells.priest.pAbolishDisease))
+        {
+            if (CanTryToCastSpell(pFriend, m_spells.priest.pAbolishDisease))
+            {
+                if (DoCastSpell(pFriend, m_spells.priest.pAbolishDisease) == SPELL_CAST_OK)
+                    return;
+            }
+        }
+    }
+
+
     if (m_spells.priest.pPrayerofFortitude)
     {
         if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
@@ -2065,7 +2088,21 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         }
     }
 
-    if (m_spells.priest.pShadowProtection)
+    if (m_spells.priest.pPrayerofShadowProtection)
+    {
+        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+        {
+            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+            {
+                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                {
+                    m_isBuffing = true;
+                    return;
+                }
+            }
+        }
+    }
+    else (m_spells.priest.pShadowProtection)
     {
         if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
         {
@@ -2078,7 +2115,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 }
             }
         }
-    }
+    }    
 
     if (m_spells.priest.pInnerFire &&
         CanTryToCastSpell(me, m_spells.priest.pInnerFire))
@@ -2516,6 +2553,13 @@ void PartyBotAI::UpdateOutOfCombatAI_Warrior()
             return;
     }
 
+    if (m_spells.warrior.pBattleShout &&
+        CanTryToCastSpell(me, m_spells.warrior.pBattleShout))
+    {
+        if (DoCastSpell(me, m_spells.warrior.pBattleShout) == SPELL_CAST_OK)
+            return;
+    }
+
     if (Unit* pVictim = me->GetVictim())
     {
         if (m_spells.warrior.pCharge &&
@@ -2549,7 +2593,8 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
             }
         }
 
-        if (m_spells.warrior.pExecute && m_role == ROLE_MELEE_DPS &&
+        if (m_spells.warrior.pExecute && 
+            m_role != ROLE_TANK &&
            (pVictim->GetHealthPercent() < 20.0f) &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pExecute))
         {
@@ -2557,7 +2602,8 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if (m_spells.warrior.pOverpower && m_role != ROLE_TANK &&
+        if (m_spells.warrior.pOverpower && 
+            m_role != ROLE_TANK &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pOverpower))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pOverpower) == SPELL_CAST_OK)
@@ -2732,7 +2778,8 @@ void PartyBotAI::UpdateInCombatAI_Warrior()
                 return;
         }
 
-        if (m_spells.warrior.pWhirlwind && m_role == ROLE_MELEE_DPS &&
+        if (m_spells.warrior.pWhirlwind && 
+            m_role != ROLE_TANK &&
             CanTryToCastSpell(pVictim, m_spells.warrior.pWhirlwind))
         {
             if (DoCastSpell(pVictim, m_spells.warrior.pWhirlwind) == SPELL_CAST_OK)

@@ -61,7 +61,7 @@ enum
 
     GO_LAVA_BURST             = 178088,
 
-    MAX_ADDS_IN_SUBMERGE      = 8
+    MAX_ADDS_IN_SUBMERGE      = 4
 };
 
 // Lava Burst locations
