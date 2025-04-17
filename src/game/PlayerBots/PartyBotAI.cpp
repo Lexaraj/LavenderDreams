@@ -657,7 +657,23 @@ void PartyBotAI::UpdateAI(uint32 const diff)
     if (m_updateTimer.Passed())
         m_updateTimer.Reset(PB_UPDATE_INTERVAL);
     else
+    {
+        // When bot is paused
+        if (m_updateTimer.GetExpiry() > PB_UPDATE_INTERVAL)
+        {
+            // Make pet stop attacking and follow
+            if (Pet* pPet = me->GetPet())
+            {
+                if (pPet->GetVictim())
+                {
+                    pPet->AttackStop();
+                    pPet->GetMotionMaster()->Clear();
+                    pPet->GetMotionMaster()->MoveFollow(me, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
+                }
+            }
+        }
         return;
+    }
 
     if (!me->IsInWorld() || me->IsBeingTeleported())
         return;
@@ -1564,6 +1580,13 @@ void PartyBotAI::UpdateOutOfCombatAI_Hunter()
             return;
     }
 
+    if (m_spells.hunter.pTrueshotAura && 
+        CanTryToCastSpell(me, m_spells.hunter.pTrueshotAura))
+    {
+        if (DoCastSpell(me, m_spells.hunter.pTrueshotAura) == SPELL_CAST_OK)
+            return;
+    }
+
     if (Unit* pVictim = me->GetVictim())
     {
         if (m_spells.hunter.pHuntersMark &&
@@ -1575,7 +1598,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Hunter()
 
         if (Pet* pPet = me->GetPet())
         {
-            if (!pPet->GetVictim())
+            if (!pPet->GetVictim() || pPet->GetVictim() != pVictim)
             {
                 pPet->GetCharmInfo()->SetIsCommandAttack(true);
                 pPet->AI()->AttackStart(pVictim);
@@ -1585,20 +1608,31 @@ void PartyBotAI::UpdateOutOfCombatAI_Hunter()
         UpdateInCombatAI_Hunter();
     }
     else
+    {
         SummonPetIfNeeded();
+
+        if (Pet* pPet = me->GetPet())
+        {
+            // If hunter is paused or not in combat, make pet stop attacking and follow
+            if (m_isStaying || !me->IsInCombat())
+            {
+                pPet->AttackStop();
+                pPet->GetMotionMaster()->Clear();
+                pPet->GetMotionMaster()->MoveFollow(me, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
+            }
+        }
+    }
 }
 
 void PartyBotAI::UpdateInCombatAI_Hunter()
 {
     if (Unit* pVictim = me->GetVictim())
     {
-        if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
-        {
-            if (!m_isStaying)
+        if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
+            me->GetDistance(pVictim) > 30.0f &&
+            !m_isStaying)
         {
             me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
-            }
         }
 
         if (m_spells.hunter.pVolley &&
@@ -1624,6 +1658,9 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
                 }
             }
         }
+
+        if (Pet* pPet = me->GetPet())
+            pPet->AI()->AttackStart(pVictim);
 
         if (m_spells.hunter.pConcussiveShot &&
             pVictim->IsMoving() && (pVictim->GetVictim() == me) &&
@@ -1735,6 +1772,15 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
             me->GetMotionMaster()->Clear();
             if (RunAwayFromTarget(pVictim))
                 return;
+        }
+    }
+    else
+    {
+        if (Pet* pPet = me->GetPet())
+        {
+            pPet->AttackStop();
+            pPet->GetMotionMaster()->Clear();
+            pPet->GetMotionMaster()->MoveFollow(me, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
         }
     }
 }
@@ -2384,7 +2430,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Warlock()
     {
         if (Pet* pPet = me->GetPet())
         {
-            if (!pPet->GetVictim())
+            if (!pPet->GetVictim() || pPet->GetVictim() != pVictim)
             {
                 pPet->GetCharmInfo()->SetIsCommandAttack(true);
                 pPet->AI()->AttackStart(pVictim);
