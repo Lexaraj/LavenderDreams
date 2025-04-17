@@ -950,6 +950,7 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
         SendSysMessage("New party bot added.");
     else
     {
+        delete ai;
         SendSysMessage("Error spawning bot.");
         SetSentErrorMessage(true);
         return false;
@@ -1193,6 +1194,7 @@ bool ChatHandler::HandlePartyBotCloneCommand(char* args)
             }
             else
             {
+                delete ai;
                 SendSysMessage("Error spawning bot.");
                 SetSentErrorMessage(true);
                 return false;
