@@ -343,6 +343,7 @@ public:
             SpellEntry const* pAspectOfTheCheetah;
             SpellEntry const* pAspectOfTheMonkey;
             SpellEntry const* pAspectOfTheHawk;
+            SpellEntry const* pTrueshotAura;
             SpellEntry const* pSerpentSting;
             SpellEntry const* pArcaneShot;
             SpellEntry const* pAimedShot;

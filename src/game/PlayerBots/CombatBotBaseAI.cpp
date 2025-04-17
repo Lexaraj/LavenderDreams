@@ -669,6 +669,11 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.hunter.pVolley))
                         m_spells.hunter.pVolley = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Trueshot Aura") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.hunter.pTrueshotAura))
+                        m_spells.hunter.pTrueshotAura = pSpellEntry;
+                }
                 break;
             }
             case CLASS_MAGE:
