@@ -1927,7 +1927,7 @@ bool ChatHandler::HandlePartyBotPullCommand(char* args)
 
     uint32 duration;
     if (!ExtractUInt32(&args, duration))
-        duration = 10 * IN_MILLISECONDS;
+        duration = 3 * IN_MILLISECONDS;
 
     for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
     {
