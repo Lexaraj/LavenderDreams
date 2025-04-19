@@ -2173,7 +2173,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
             }
         }
     }
-
+    else
     if (m_spells.priest.pShadowProtection)
     {
         if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
