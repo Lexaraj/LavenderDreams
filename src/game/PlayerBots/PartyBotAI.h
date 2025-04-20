@@ -95,7 +95,12 @@ public:
     bool IsStaying() const { return m_isStaying; }
     void SetStaying(bool staying);
     void RepositionMeleeDps();
+    void RepositionHealer();
+    Player* GetTankPlayer();
+    void SafelyMoveTo(float x, float y, float z);
     bool ShouldReviveWithOwner();
+    bool HasEnemiesInRadius(float x, float y, float z, float radius) const;
+    void SendPartyChat(const char* message) const;
 
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;

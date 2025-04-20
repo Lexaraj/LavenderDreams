@@ -27,6 +27,9 @@
 #include "SpellAuras.h"
 #include "Chat.h"
 #include <random>
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
 
 enum PartyBotSpells
 {
@@ -970,17 +973,10 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         {
             if (!m_isStaying)
             {
-                if (GetRole() == ROLE_HEALER && !pLeader->IsInCombat())
-                {
-                    me->GetMotionMaster()->MoveFollow(pLeader, 10.0f, frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
-                    return;
-                }
-                else
-                {
-                    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
-                        me->GetMotionMaster()->MoveFollow(pLeader, urand(PB_MIN_FOLLOW_DIST, PB_MAX_FOLLOW_DIST), frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
-                }
-                
+                if (GetRole() == ROLE_HEALER)
+                    RepositionHealer();
+                else if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
+                    me->GetMotionMaster()->MoveFollow(pLeader, urand(PB_MIN_FOLLOW_DIST, PB_MAX_FOLLOW_DIST), frand(PB_MIN_FOLLOW_ANGLE, PB_MAX_FOLLOW_ANGLE));
             }
         }
         else
@@ -1030,9 +1026,7 @@ void PartyBotAI::UpdateOutOfCombatAI()
 
     // if stay, and currently moving, then stop
     if (m_isStaying && me->IsMoving())
-    {
         me->StopMoving();
-    }
 
     switch (me->GetClass())
     {
@@ -1120,7 +1114,6 @@ void PartyBotAI::UpdateInCombatAI()
         }
         else if (m_role == ROLE_MELEE_DPS)
             RepositionMeleeDps();
-        
         else if (CrowdControlMarkedTargets())
             return;
     }
@@ -3777,6 +3770,157 @@ void PartyBotAI::RepositionMeleeDps()
     }
 }
 
+void PartyBotAI::RepositionHealer()
+{
+    Player* pTank = GetTankPlayer();
+    if (!pTank)
+        return;
+
+    if (me->GetDistance(pTank) > 20.0f)
+    {
+        if (me->IsMoving())
+            me->GetMotionMaster()->Clear(false, true);
+
+        float dist = 12.0f;
+        float tankAngle = pTank->GetOrientation();
+        float angleToHealer = pTank->GetAngle(me);
+        float destX = pTank->GetPositionX() + cos(angleToHealer) * dist;
+        float destY = pTank->GetPositionY() + sin(angleToHealer) * dist;
+        float destZ = pTank->GetPositionZ();
+        SafelyMoveTo(destX, destY, destZ);
+    }
+    else
+    {
+        me->StopMoving(true);
+        me->GetMotionMaster()->Clear(false, true);
+        if (!me->IsWithinLOSInMap(pTank))
+        {
+            float angleToHealer = pTank->GetAngle(me);
+            me->GetMotionMaster()->MoveFollow(pTank, 5.0f, angleToHealer);
+        }
+        else
+        {
+            me->GetMotionMaster()->MoveIdle();
+        }
+    }
+}
+
+void PartyBotAI::SafelyMoveTo(float x, float y, float z)
+{
+    Map* map = me->GetMap();
+    if (!map)
+        return;
+
+    float groundZ = map->GetHeight(x, y, z);
+    if (groundZ <= INVALID_HEIGHT)
+        return;
+
+    // Sample points along the path to check for obstacles
+    float currentX = me->GetPositionX();
+    float currentY = me->GetPositionY();
+    float currentZ = me->GetPositionZ();
+    const int samples = 5;
+    for (int i = 1; i <= samples; ++i)
+    {
+        float t = float(i) / float(samples);
+        float checkX = currentX + (x - currentX) * t;
+        float checkY = currentY + (y - currentY) * t;
+        float checkZ = currentZ + (z - currentZ) * t;
+
+        // Check if this point is valid
+        float checkGroundZ = map->GetHeight(checkX, checkY, checkZ);
+        if (checkGroundZ <= INVALID_HEIGHT)
+            return;
+
+        // Check if there's a significant height difference that might indicate a wall
+        if (std::abs(checkGroundZ - checkZ) > 2.0f)
+            return;
+    }
+    
+    // Don't attempt to move up too steep a slope (max 60 degrees)
+    float xyDistance = sqrt(pow(x - currentX, 2) + pow(y - currentY, 2));
+    float zDelta = fabs(z - currentZ);
+    float maxZRatio = 1.732f; // tan(60 degrees)
+    if (zDelta > xyDistance * maxZRatio)
+        return;
+    
+    // Update the ground position and move to the new position
+    me->UpdateGroundPositionZ(x, y, z);
+    me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES);
+}
+
+Player* PartyBotAI::GetTankPlayer()
+{
+    Group* pGroup = me->GetGroup();
+    if (!pGroup)
+    {
+        SendPartyChat("No group found, cannot determine tank");
+        return nullptr;
+    }
+
+    // First pass: check for explicit tank roles and count tank-capable classes
+    uint8 tankClassCount = 0;
+    Player* firstTankClass = nullptr;
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        Player* pMember = itr->getSource();
+        if (!pMember || !pMember->IsAlive())
+            continue;
+
+        // Check if this is a party bot with explicit tank role
+        if (pMember->AI() && dynamic_cast<PartyBotAI*>(pMember->AI()) && 
+            dynamic_cast<PartyBotAI*>(pMember->AI())->GetRole() == ROLE_TANK)
+            return pMember;
+        
+        if (IsTankClass(pMember->GetClass()))
+        {
+            tankClassCount++;
+            if (!firstTankClass)
+                firstTankClass = pMember;
+        }
+    }
+
+    // If only one tank-capable class exists, they must be the tank
+    if (tankClassCount == 1 && firstTankClass)
+        return firstTankClass;
+
+    // If multiple tank-capable classes exist, do class-based role checks
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        Player* pMember = itr->getSource();
+        if (!pMember || !pMember->IsAlive())
+            continue;
+
+        uint8 memberClass = pMember->GetClass();
+        if (!IsTankClass(memberClass))
+            continue;
+
+        if (memberClass == CLASS_WARRIOR)
+        {
+            // Check warriors for defensive stance or shield
+            if (pMember->GetShapeshiftForm() != FORM_DEFENSIVESTANCE && !IsWearingShield(pMember))
+                continue;
+        }
+        else if (memberClass == CLASS_PALADIN)
+        {
+            // Check paladins for righteous fury aura
+            if (!pMember->HasAuraType(SPELL_AURA_MOD_THREAT))
+                continue;
+        }
+        else if (memberClass == CLASS_DRUID)
+        {
+            // Check druids for bear form
+            if (pMember->GetShapeshiftForm() != FORM_BEAR)
+                continue;
+        }
+
+        return pMember;
+    }
+
+    // If no tank is found, return the first party member
+    return pGroup->GetFirstMember()->getSource();
+}
+
 bool PartyBotAI::ShouldReviveWithOwner()
 {
     Player* pLeader = GetPartyLeader();
@@ -3796,5 +3940,34 @@ bool PartyBotAI::ShouldReviveWithOwner()
     }
     
     return false;
+}
+
+bool PartyBotAI::HasEnemiesInRadius(float x, float y, float z, float radius) const
+{
+    std::list<Unit*> targets;
+    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, radius);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(me, searcher, radius);
+
+    for (const auto& target : targets)
+    {
+        if (target->IsAlive() && target->IsInWorld() && 
+            target->IsWithinDist3d(x, y, z, radius))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PartyBotAI::SendPartyChat(const char* message) const
+{
+    if (!me || !me->GetGroup())
+        return;
+
+    WorldPacket* data = new WorldPacket();
+    ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message, LANG_UNIVERSAL, CHAT_TAG_NONE, me->GetObjectGuid(), me->GetName());
+    me->GetGroup()->BroadcastPacket(data, false);
+    delete data;
 }
 
