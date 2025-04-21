@@ -681,6 +681,24 @@ void PartyBotAI::UpdateAI(uint32 const diff)
     if (!me->IsInWorld() || me->IsBeingTeleported())
         return;
 
+    // Check for healer distance to tank during follow mode
+    if (GetRole() == ROLE_HEALER && !m_isStaying)
+    {
+        if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
+        {
+            if (Player* pTank = GetTankPlayer())
+            {
+                if (me->IsWithinDistInMap(pTank, 30.0f) && me->IsWithinLOSInMap(pTank))
+                {
+                    //SendPartyChat("Close enough to tank, stopping movement");
+                    me->StopMoving();
+                    me->GetMotionMaster()->Clear(false, true);
+                    me->GetMotionMaster()->MoveIdle();
+                }
+            }
+        }
+    }
+
     if (!m_initialized)
     {
         AddToPlayerGroup();
@@ -2078,6 +2096,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
             if (CanTryToCastSpell(pFriend, m_spells.priest.pDispelMagic))
             {
                 if (DoCastSpell(pFriend, m_spells.priest.pDispelMagic) == SPELL_CAST_OK)
+                    me->ClearTarget();
                     return;
             }
         }
@@ -2089,6 +2108,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
             if (CanTryToCastSpell(pFriend, m_spells.priest.pAbolishDisease))
             {
                 if (DoCastSpell(pFriend, m_spells.priest.pAbolishDisease) == SPELL_CAST_OK)
+                    me->ClearTarget();
                     return;
             }
         }
@@ -2103,6 +2123,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2117,6 +2138,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2132,6 +2154,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2146,6 +2169,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(me, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2161,6 +2185,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2176,6 +2201,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                 if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
+                    me->ClearTarget();
                     return;
                 }
             }
@@ -2188,6 +2214,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         if (DoCastSpell(me, m_spells.priest.pInnerFire) == SPELL_CAST_OK)
         {
             m_isBuffing = true;
+            me->ClearTarget();
             return;
         }
     }
@@ -3774,27 +3801,48 @@ void PartyBotAI::RepositionHealer()
 {
     Player* pTank = GetTankPlayer();
     if (!pTank)
-        return;
-
-    if (me->GetDistance(pTank) > 20.0f)
     {
-        if (me->IsMoving())
-            me->GetMotionMaster()->Clear(false, true);
+        SendPartyChat("No tank found, cannot reposition");
+        return;
+    }
 
-        float dist = 12.0f;
+    // don't get stuck following tank
+    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
+    {
+        if (me->IsWithinLOSInMap(pTank) && me->IsWithinDistInMap(pTank, 35.0f))
+        {
+            //SendPartyChat("In LOS, chillin like a villain");
+            me->GetMotionMaster()->Clear(true, true);
+            me->GetMotionMaster()->MoveIdle();
+            return;
+        }
+    }
+
+    if (me->GetDistance2d(pTank) > 30.0f)
+    {
+        float dist = 30.0f;
         float tankAngle = pTank->GetOrientation();
         float angleToHealer = pTank->GetAngle(me);
         float destX = pTank->GetPositionX() + cos(angleToHealer) * dist;
         float destY = pTank->GetPositionY() + sin(angleToHealer) * dist;
         float destZ = pTank->GetPositionZ();
-        SafelyMoveTo(destX, destY, destZ);
+        if (SafelyMoveTo(destX, destY, destZ))
+        {
+            //SendPartyChat("Repositioning to tank");
+        }
+        else
+        {
+            //SendPartyChat("No path found, moving to follow tank");
+            me->GetMotionMaster()->MoveFollow(pTank, 5.0f, angleToHealer);
+        }
     }
     else
     {
-        me->StopMoving(true);
-        me->GetMotionMaster()->Clear(false, true);
+        me->StopMoving();
+        me->GetMotionMaster()->Clear(true, true);
         if (!me->IsWithinLOSInMap(pTank))
         {
+            //SendPartyChat("Out of LOS, moving to follow tank");
             float angleToHealer = pTank->GetAngle(me);
             me->GetMotionMaster()->MoveFollow(pTank, 5.0f, angleToHealer);
         }
@@ -3805,15 +3853,15 @@ void PartyBotAI::RepositionHealer()
     }
 }
 
-void PartyBotAI::SafelyMoveTo(float x, float y, float z)
+bool PartyBotAI::SafelyMoveTo(float x, float y, float z)
 {
     Map* map = me->GetMap();
     if (!map)
-        return;
+        return false;
 
     float groundZ = map->GetHeight(x, y, z);
     if (groundZ <= INVALID_HEIGHT)
-        return;
+        return false;
 
     // Sample points along the path to check for obstacles
     float currentX = me->GetPositionX();
@@ -3830,11 +3878,7 @@ void PartyBotAI::SafelyMoveTo(float x, float y, float z)
         // Check if this point is valid
         float checkGroundZ = map->GetHeight(checkX, checkY, checkZ);
         if (checkGroundZ <= INVALID_HEIGHT)
-            return;
-
-        // Check if there's a significant height difference that might indicate a wall
-        if (std::abs(checkGroundZ - checkZ) > 2.0f)
-            return;
+            return false;
     }
     
     // Don't attempt to move up too steep a slope (max 60 degrees)
@@ -3842,12 +3886,40 @@ void PartyBotAI::SafelyMoveTo(float x, float y, float z)
     float zDelta = fabs(z - currentZ);
     float maxZRatio = 1.732f; // tan(60 degrees)
     if (zDelta > xyDistance * maxZRatio)
-        return;
+        return false;
     
     // Update the ground position and move to the new position
     me->UpdateGroundPositionZ(x, y, z);
     me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES);
+    return true;
 }
+
+std::string PartyBotAI::GetHealerTankAnnouncementText(const char* pName)
+{
+    char message[128];
+    uint8 pClass = me->GetClass();
+    
+    switch (pClass)
+    {
+        case CLASS_PRIEST:
+            snprintf(message, sizeof(message), "By the grace of the Light, I stand ready. %s is chosen as the vanguard—I shall be their balm.", pName);
+            break;
+        case CLASS_DRUID:
+            snprintf(message, sizeof(message), "By Nature's blessing, I shall keep %s whole through whatever trials await.", pName);
+            break;
+        case CLASS_PALADIN:
+            snprintf(message, sizeof(message), "The Light guide us—%s stands as my shield. I shall mend the wounds of battle.", pName);
+            break;
+        case CLASS_SHAMAN:
+            snprintf(message, sizeof(message), "The elements grant me power to preserve %s's strength in battle.", pName);
+            break;
+        default:
+            snprintf(message, sizeof(message), "I will focus my healing on %s, our protector. (Class: %d)", pName, pClass);
+            break;
+    }
+    return message;
+}
+
 
 Player* PartyBotAI::GetTankPlayer()
 {
@@ -3867,10 +3939,21 @@ Player* PartyBotAI::GetTankPlayer()
         if (!pMember || !pMember->IsAlive())
             continue;
 
+        if (pMember == me)
+            continue;
+
         // Check if this is a party bot with explicit tank role
         if (pMember->AI() && dynamic_cast<PartyBotAI*>(pMember->AI()) && 
             dynamic_cast<PartyBotAI*>(pMember->AI())->GetRole() == ROLE_TANK)
+        {
+            if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
+            {
+                std::string message = GetHealerTankAnnouncementText(pMember->GetName());
+                SendPartyChat(message.c_str());
+                m_hasAnnouncedTank = true;
+            }
             return pMember;
+        }
         
         if (IsTankClass(pMember->GetClass()))
         {
@@ -3882,7 +3965,15 @@ Player* PartyBotAI::GetTankPlayer()
 
     // If only one tank-capable class exists, they must be the tank
     if (tankClassCount == 1 && firstTankClass)
+    {
+        if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
+        {
+            std::string message = GetHealerTankAnnouncementText(firstTankClass->GetName());
+            SendPartyChat(message.c_str());
+            m_hasAnnouncedTank = true;
+        }
         return firstTankClass;
+    }
 
     // If multiple tank-capable classes exist, do class-based role checks
     for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
@@ -3914,11 +4005,24 @@ Player* PartyBotAI::GetTankPlayer()
                 continue;
         }
 
+        if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
+        {
+            std::string message = GetHealerTankAnnouncementText(pMember->GetName());
+            SendPartyChat(message.c_str());
+            m_hasAnnouncedTank = true;
+        }
         return pMember;
     }
 
     // If no tank is found, return the first party member
-    return pGroup->GetFirstMember()->getSource();
+    Player* firstMember = pGroup->GetFirstMember()->getSource();
+    if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
+    {
+        std::string message = GetHealerTankAnnouncementText(firstMember->GetName());
+        SendPartyChat(message.c_str());
+        m_hasAnnouncedTank = true;
+    }
+    return firstMember;
 }
 
 bool PartyBotAI::ShouldReviveWithOwner()

@@ -33,6 +33,9 @@ public:
         m_cloneGuid = pClone ? pClone->GetObjectGuid() : ObjectGuid();
         m_updateTimer.Reset(2000);
         m_isStaying = false;
+        m_isBuffing = false;
+        m_leaderReleased = false;
+        m_hasAnnouncedTank = false;
     }
     PartyBotAI(Player* pLeader, uint32 mapId, uint32 instanceId, float x, float y, float z, float o)
         : CombatBotBaseAI(), m_mapId(mapId), m_instanceId(instanceId), m_x(x), m_y(y), m_z(z), m_o(o)
@@ -41,6 +44,9 @@ public:
         m_leaderGuid = pLeader->GetObjectGuid();
         m_updateTimer.Reset(2000);
         m_isStaying = false;
+        m_isBuffing = false;
+        m_leaderReleased = false;
+        m_hasAnnouncedTank = false;
     }
 
     bool OnSessionLoaded(PlayerBotEntry* entry, WorldSession* sess) final;
@@ -97,10 +103,11 @@ public:
     void RepositionMeleeDps();
     void RepositionHealer();
     Player* GetTankPlayer();
-    void SafelyMoveTo(float x, float y, float z);
+    bool SafelyMoveTo(float x, float y, float z);
     bool ShouldReviveWithOwner();
     bool HasEnemiesInRadius(float x, float y, float z, float radius) const;
     void SendPartyChat(const char* message) const;
+    std::string GetHealerTankAnnouncementText(const char* pName);
 
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;
@@ -119,6 +126,8 @@ public:
     bool m_resetSpellData = false;
     bool m_isStaying = false;
     bool m_leaderReleased = false;
+    bool m_isBuffing = false;
+    bool m_hasAnnouncedTank = false;
 };
 
 #endif
