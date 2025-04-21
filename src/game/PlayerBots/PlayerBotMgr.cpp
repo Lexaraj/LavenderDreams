@@ -937,9 +937,16 @@ bool ChatHandler::HandlePartyBotAddCommand(char* args)
     uint8 botRace = SelectRandomRaceForClass(botClass, pPlayer->GetTeam());
     if (!botRace)
     {
-        SendSysMessage("Unable to select race for bot.");
-        SetSentErrorMessage(true);
-        return false;
+        if (botClass == CLASS_SHAMAN)
+            botRace = PickRandomValue(RACE_TAUREN, RACE_ORC, RACE_TROLL);
+        else if (botClass == CLASS_PALADIN)
+            botRace = PickRandomValue(RACE_HUMAN, RACE_DWARF);
+        
+        if (!botRace) {
+            SendSysMessage("Unable to select race for bot.");
+            SetSentErrorMessage(true);
+            return false;
+        }
     }
 
     float x, y, z;
