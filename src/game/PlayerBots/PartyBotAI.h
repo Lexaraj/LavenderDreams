@@ -20,6 +20,13 @@
 #include "CombatBotBaseAI.h"
 #include "Group.h"
 #include "ObjectAccessor.h"
+#include "PartyBotEncounters.h"
+
+#define PB_UPDATE_INTERVAL 1000
+#define PB_MIN_FOLLOW_DIST 3.0f
+#define PB_MAX_FOLLOW_DIST 6.0f
+#define PB_MIN_FOLLOW_ANGLE 0.0f
+#define PB_MAX_FOLLOW_ANGLE 6.0f
 
 class PartyBotAI : public CombatBotBaseAI
 {
@@ -36,6 +43,7 @@ public:
         m_isBuffing = false;
         m_leaderReleased = false;
         m_hasAnnouncedTank = false;
+        m_lastMoveTime = 0;
     }
     PartyBotAI(Player* pLeader, uint32 mapId, uint32 instanceId, float x, float y, float z, float o)
         : CombatBotBaseAI(), m_mapId(mapId), m_instanceId(instanceId), m_x(x), m_y(y), m_z(z), m_o(o)
@@ -47,6 +55,7 @@ public:
         m_isBuffing = false;
         m_leaderReleased = false;
         m_hasAnnouncedTank = false;
+        m_lastMoveTime = 0;
     }
 
     bool OnSessionLoaded(PlayerBotEntry* entry, WorldSession* sess) final;
@@ -103,7 +112,7 @@ public:
     void RepositionMeleeDps();
     void RepositionHealer();
     Player* GetTankPlayer();
-    bool SafelyMoveTo(float x, float y, float z);
+    bool SafelyMoveTo(float x, float y, float z, float angle = 0.0f);
     bool ShouldReviveWithOwner();
     bool HasEnemiesInRadius(float x, float y, float z, float radius) const;
     void SendPartyChat(const char* message) const;
@@ -128,6 +137,7 @@ public:
     bool m_leaderReleased = false;
     bool m_isBuffing = false;
     bool m_hasAnnouncedTank = false;
+    uint32 m_lastMoveTime;  // Cooldown for Magmadar encounter movement
 };
 
 #endif
