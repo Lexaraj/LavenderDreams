@@ -1,7 +1,7 @@
 ---
 name: Content Tuning for 5-man groups
 about: For identifying content that needs to be tuned for 5-man groups.
-title: 'Cotent Tuning for '
+title: 'Content Tuning for '
 labels: project goal
 assignees: Lexaraj
 
