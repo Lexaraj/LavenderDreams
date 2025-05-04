@@ -30,6 +30,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
+#include "PartyBotEncounters.h"
 
 enum PartyBotSpells
 {
@@ -39,12 +40,6 @@ enum PartyBotSpells
     PB_SPELL_SHOOT_WAND = 5019,
     PB_SPELL_HONORLESS_TARGET = 2479,
 };
-
-#define PB_UPDATE_INTERVAL 1000
-#define PB_MIN_FOLLOW_DIST 3.0f
-#define PB_MAX_FOLLOW_DIST 6.0f
-#define PB_MIN_FOLLOW_ANGLE 0.0f
-#define PB_MAX_FOLLOW_ANGLE 6.0f
 
 bool PartyBotAI::OnSessionLoaded(PlayerBotEntry* entry, WorldSession* sess)
 {
@@ -681,24 +676,6 @@ void PartyBotAI::UpdateAI(uint32 const diff)
     if (!me->IsInWorld() || me->IsBeingTeleported())
         return;
 
-    // Check for healer distance to tank during follow mode
-    if (GetRole() == ROLE_HEALER && !m_isStaying)
-    {
-        if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
-        {
-            if (Player* pTank = GetTankPlayer())
-            {
-                if (me->IsWithinDistInMap(pTank, 30.0f) && me->IsWithinLOSInMap(pTank))
-                {
-                    //SendPartyChat("Close enough to tank, stopping movement");
-                    me->StopMoving();
-                    me->GetMotionMaster()->Clear(false, true);
-                    me->GetMotionMaster()->MoveIdle();
-                }
-            }
-        }
-    }
-
     if (!m_initialized)
     {
         AddToPlayerGroup();
@@ -807,6 +784,28 @@ void PartyBotAI::UpdateAI(uint32 const diff)
         return;
     }
 
+// Check for healer distance to tank during follow mode
+    if (GetRole() == ROLE_HEALER && !m_isStaying)
+    {
+        if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
+        {
+            if (Player* pTank = GetTankPlayer())
+            {
+                if (me->IsWithinDistInMap(pTank, 30.0f) && me->IsWithinLOSInMap(pTank))
+                {
+                    //SendPartyChat("Close enough to tank, stopping movement");
+                    me->StopMoving();
+                    me->GetMotionMaster()->Clear(false, true);
+                    me->GetMotionMaster()->MoveIdle();
+                }
+            }
+        }
+    }
+
+    if (!PartyBotEncounters::HandleEncounterAI(this))
+        return;
+
+    // Check if we should come out of feign death
     if (me->HasUnitState(UNIT_STATE_FEIGN_DEATH) && me->HasAuraType(SPELL_AURA_FEIGN_DEATH) &&
        !me->IsInCombat() && (!me->GetPet() || !me->GetPet()->IsInCombat()) &&
        !me->SelectRandomUnfriendlyTarget(nullptr, 20.0f, false, true))
@@ -1308,7 +1307,7 @@ void PartyBotAI::UpdateInCombatAI_Paladin()
         if (FindAndPreHealTarget())
             return;
 
-        if (m_spells.paladin.pCleanse)
+        if (m_spells.paladin.pCleanse && !PartyBotEncounters::OverrideMagicDispel())
         {
             if (Unit* pFriend = SelectDispelTarget(m_spells.paladin.pCleanse))
             {
@@ -2299,7 +2298,7 @@ void PartyBotAI::UpdateInCombatAI_Priest()
                 return;
 
         // Dispels
-        if (m_spells.priest.pDispelMagic)
+        if (m_spells.priest.pDispelMagic && !PartyBotEncounters::OverrideMagicDispel())
         {
             if (Unit* pFriend = SelectDispelTarget(m_spells.priest.pDispelMagic))
             {
@@ -3687,6 +3686,9 @@ void PartyBotAI::SetStaying(bool staying)
 
 void PartyBotAI::RepositionMeleeDps()
 {
+    if (PartyBotEncounters::OverrideMeleePosition())
+        return;
+
     Unit* pVictim = me->GetVictim();
     if (!pVictim || !IsValidHostileTarget(pVictim))
         return;
@@ -3853,7 +3855,7 @@ void PartyBotAI::RepositionHealer()
     }
 }
 
-bool PartyBotAI::SafelyMoveTo(float x, float y, float z)
+bool PartyBotAI::SafelyMoveTo(float x, float y, float z, float angle)
 {
     Map* map = me->GetMap();
     if (!map)
@@ -3890,7 +3892,7 @@ bool PartyBotAI::SafelyMoveTo(float x, float y, float z)
     
     // Update the ground position and move to the new position
     me->UpdateGroundPositionZ(x, y, z);
-    me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES);
+    me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, angle);
     return true;
 }
 
@@ -4074,4 +4076,3 @@ void PartyBotAI::SendPartyChat(const char* message) const
     me->GetGroup()->BroadcastPacket(data, false);
     delete data;
 }
-
