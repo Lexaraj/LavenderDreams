@@ -192,6 +192,7 @@ set (game_SRCS
     PacketBroadcast/MovementBroadcaster.cpp
     PacketBroadcast/PlayerBroadcaster.cpp
     PlayerBots/PartyBotAI.cpp
+    PlayerBots/PartyBotChat.cpp
     PlayerBots/PartyBotEncounters.cpp
     PlayerBots/Encounters/MoltenCore.cpp
     PlayerBots/CombatBotBaseAI.cpp

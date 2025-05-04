@@ -1,6 +1,13 @@
 #ifndef MANGOS_PartyBotEncounters_H
 #define MANGOS_PartyBotEncounters_H
 
+#include "SharedDefines.h"
+#include "MotionMaster.h"
+#include "Unit.h"
+#include "Player.h"
+#include "Spell.h"
+#include "ScriptedInstance.h"
+
 class PartyBotAI;  // Forward declaration
 
 class PartyBotEncounters
@@ -40,6 +47,11 @@ public:
 
     static bool HandleEncounterAI(PartyBotAI* pBot);
     static bool IsEncounterInProgress(PartyBotAI* pBot);
+
+    static void SendPartyChat(Player* player, const char* msg)
+    {
+        PartyBotChat::GetInstance()->SendPartyChat(msg, player);
+    }
 };
 
 #endif 

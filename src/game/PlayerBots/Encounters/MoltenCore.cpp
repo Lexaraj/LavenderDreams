@@ -1,10 +1,3 @@
-#include "SharedDefines.h"
-#include "MotionMaster.h"
-#include "Unit.h"
-#include "Player.h"
-#include "Spell.h"
-#include "PartyBotAI.h"
-#include "ScriptedInstance.h"
 #include "MoltenCore.h"
 
 #ifndef M_PI_2

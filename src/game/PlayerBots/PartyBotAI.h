@@ -20,6 +20,7 @@
 #include "CombatBotBaseAI.h"
 #include "Group.h"
 #include "ObjectAccessor.h"
+#include "PartyBotChat.h"
 #include "PartyBotEncounters.h"
 
 #define PB_UPDATE_INTERVAL 1000
@@ -42,7 +43,6 @@ public:
         m_isStaying = false;
         m_isBuffing = false;
         m_leaderReleased = false;
-        m_hasAnnouncedTank = false;
         m_lastMoveTime = 0;
     }
     PartyBotAI(Player* pLeader, uint32 mapId, uint32 instanceId, float x, float y, float z, float o)
@@ -54,7 +54,6 @@ public:
         m_isStaying = false;
         m_isBuffing = false;
         m_leaderReleased = false;
-        m_hasAnnouncedTank = false;
         m_lastMoveTime = 0;
     }
 
@@ -115,9 +114,8 @@ public:
     bool SafelyMoveTo(float x, float y, float z, float angle = 0.0f);
     bool ShouldReviveWithOwner();
     bool HasEnemiesInRadius(float x, float y, float z, float radius) const;
-    void SendPartyChat(const char* message) const;
-    std::string GetHealerTankAnnouncementText(const char* pName);
-
+    
+    PartyBotChat* PartyChat = PartyBotChat::GetInstance();
     std::vector<RaidTargetIcon> m_marksToCC;
     std::vector<RaidTargetIcon> m_marksToFocus;
     ShortTimeTracker m_updateTimer;
@@ -128,6 +126,7 @@ public:
     uint8 m_level = 0;
     uint32 m_mapId = 0;
     uint32 m_instanceId = 0;
+    uint32 m_lastMoveTime = 0;
     float m_x = 0.0f;
     float m_y = 0.0f;
     float m_z = 0.0f;
@@ -136,8 +135,14 @@ public:
     bool m_isStaying = false;
     bool m_leaderReleased = false;
     bool m_isBuffing = false;
-    bool m_hasAnnouncedTank = false;
-    uint32 m_lastMoveTime;  // Cooldown for Magmadar encounter movement
+
+    void SendPartyChat(const char* msg)
+    {
+        if (!me || !me->GetGroup())
+            return;
+
+        PartyBotChat::GetInstance()->SendPartyChat(msg, me);
+    }
 };
 
 #endif
