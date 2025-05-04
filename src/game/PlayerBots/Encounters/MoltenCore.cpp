@@ -29,40 +29,59 @@ bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
     uint32 majordomoState = pInstance->GetData(TYPE_MAJORDOMO);
     uint32 ragnarosState  = pInstance->GetData(TYPE_RAGNAROS);
 
+    // Check if any encounter is in progress
+    bool anyEncounterInProgress = 
+        (lucifronState == IN_PROGRESS) ||
+        (magmadarState == IN_PROGRESS) ||
+        (gehennasState == IN_PROGRESS) ||
+        (garrState == IN_PROGRESS) ||
+        (geddonState == IN_PROGRESS) ||
+        (shazzrahState == IN_PROGRESS) ||
+        (sulfuronState == IN_PROGRESS) ||
+        (golemaggState == IN_PROGRESS) ||
+        (majordomoState == IN_PROGRESS) ||
+        (ragnarosState == IN_PROGRESS || ragnarosState == SPECIAL);
+
+    if (!anyEncounterInProgress)
+    {
+        m_overrideMeleePosition = false;
+        m_overrideMagicDispel = false;
+        return true;
+    }
     
-    if (lucifronState == IN_PROGRESS || lucifronState == SPECIAL)
+    if (lucifronState == IN_PROGRESS)
     {
         return LucifronEncounter(pBot);
     }
-    else if (magmadarState == IN_PROGRESS || magmadarState == SPECIAL)
+    else if (magmadarState == IN_PROGRESS)
     {
         return MagmadarEncounter(pBot);
     }
-    else if (gehennasState == IN_PROGRESS || gehennasState == SPECIAL)
+    else if (gehennasState == IN_PROGRESS)
     {
         return GehennasEncounter(pBot);
     }
-    else if (garrState == IN_PROGRESS || garrState == SPECIAL)
+    else if (garrState == IN_PROGRESS)
     {
         return GarrEncounter(pBot);
     }
-    else if (geddonState == IN_PROGRESS || geddonState == SPECIAL)
+    else if (geddonState == IN_PROGRESS)
     {
         return GeddonEncounter(pBot);
     }
-    else if (shazzrahState == IN_PROGRESS || shazzrahState == SPECIAL)
+    else if (shazzrahState == IN_PROGRESS)
     {
         return ShazzrahEncounter(pBot);
     }
-    else if (sulfuronState == IN_PROGRESS || sulfuronState == SPECIAL)
+    else if (sulfuronState == IN_PROGRESS)
     {
         return SulfuronEncounter(pBot);
     }
-    else if (golemaggState == IN_PROGRESS || golemaggState == SPECIAL)
+    else if (golemaggState == IN_PROGRESS)
     {
         return GolemaggEncounter(pBot);
     }
-    else if (majordomoState == IN_PROGRESS || majordomoState == SPECIAL)
+    else if (majordomoState == IN_PROGRESS)
     {
         return MajordomoEncounter(pBot);
     }
@@ -70,7 +89,6 @@ bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
     {
         return RagnarosEncounter(pBot);
     }
-
 
     return true;
 }
