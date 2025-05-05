@@ -1017,11 +1017,7 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     Player* newChar = new Player(sess);
     uint32 pguid = e->playerGUID;
 
-    // Set the player's name before creation
-    std::string botName = name.substr(0, std::min((size_t)7, name.length())) + "clone";
-    newChar->SetName(botName);
-    
-    if (!newChar->Create(pguid, botName, race, class_, gender, skin, face, hairStyle, hairColor, facialHair))
+    if (!newChar->Create(pguid, name, race, class_, gender, skin, face, hairStyle, hairColor, facialHair))
     {
         delete newChar;
         return false;
