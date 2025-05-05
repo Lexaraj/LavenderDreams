@@ -348,7 +348,7 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
     if (GetRole() == ROLE_HEALER)
     {
         if (!m_isStaying) {
-            me->SetCasterChaseDistance(25.0f);
+            me->SetCasterChaseDistance(30.0f);
             me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
         } else {
             me->GetMotionMaster()->Clear(false, true);
@@ -359,10 +359,8 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
 
     if (me->Attack(pVictim, true))
     {
-        if (GetRole() == ROLE_RANGE_DPS &&
-            me->GetPowerPercent(POWER_MANA) > 10.0f &&
-            me->GetCombatDistance(pVictim) > 8.0f)
-            me->SetCasterChaseDistance(25.0f);
+        if (GetRole() == ROLE_RANGE_DPS)
+            me->SetCasterChaseDistance(30.0f);
         else if (me->HasDistanceCasterMovement())
             me->SetCasterChaseDistance(0.0f);
 
@@ -374,7 +372,7 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
             }
             else
             {
-                me->SetCasterChaseDistance(GetRole() == ROLE_TANK ? 0.0f : 25.0f);
+                me->SetCasterChaseDistance(GetRole() == ROLE_TANK ? 0.0f : 30.0f);
                 me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
             }
         }
@@ -1011,7 +1009,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                     case IDLE_MOTION_TYPE:
                     case FOLLOW_MOTION_TYPE:
                         bool isMeleeDpsOrTank = (GetRole() == ROLE_MELEE_DPS || GetRole() == ROLE_TANK);
-                        float chaseDistance = isMeleeDpsOrTank ? 0.0f : 25.0f;
+                        float chaseDistance = isMeleeDpsOrTank ? 0.0f : 30.0f;
                         if (!isMeleeDpsOrTank)
                             me->SetCasterChaseDistance(chaseDistance);
 
@@ -1639,10 +1637,10 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
     if (Unit* pVictim = me->GetVictim())
     {
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
-            me->GetDistance(pVictim) > 30.0f &&
+            me->GetDistance(pVictim) > 35.0f &&
             !m_isStaying)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (m_spells.hunter.pVolley &&
@@ -1907,9 +1905,9 @@ void PartyBotAI::UpdateInCombatAI_Mage()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
         else if (GetAttackersInRangeCount(10.0f))
         {
@@ -1948,7 +1946,7 @@ void PartyBotAI::UpdateInCombatAI_Mage()
 
                     if (RunAwayFromTarget(pVictim))
                     {
-                        me->SetCasterChaseDistance(25.0f);
+                        me->SetCasterChaseDistance(30.0f);
                         return;
                     }
                 }
@@ -2395,9 +2393,9 @@ void PartyBotAI::UpdateInCombatAI_Priest()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (me->GetShapeshiftForm() == FORM_NONE)
@@ -2598,9 +2596,9 @@ void PartyBotAI::UpdateInCombatAI_Warlock()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (m_spells.warlock.pHowlofTerror &&
@@ -3597,11 +3595,11 @@ void PartyBotAI::UpdateInCombatAI_Druid()
         case FORM_MOONKIN:
         {
             if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
-                me->GetDistance(pVictim) > 30.0f)
+                me->GetDistance(pVictim) > 35.0f)
             {
                 if (!m_isStaying)
                 {
-                    me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+                    me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
                 }
             }
             else if (pVictim->CanReachWithMeleeAutoAttack(me) &&
@@ -3615,7 +3613,7 @@ void PartyBotAI::UpdateInCombatAI_Druid()
                     if (DoCastSpell(pVictim, m_spells.druid.pEntanglingRoots) == SPELL_CAST_OK)
                         return;
                 }
-                me->SetCasterChaseDistance(25.0f);
+                me->SetCasterChaseDistance(30.0f);
                 if (RunAwayFromTarget(pVictim))
                     return;
             }
