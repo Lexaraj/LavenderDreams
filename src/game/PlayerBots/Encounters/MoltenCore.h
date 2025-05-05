@@ -14,6 +14,12 @@ enum EncounterIds
     TYPE_MAJORDOMO = 8,
     TYPE_RAGNAROS  = 9
 };
+
+enum Bolos
+{
+    LAVA_SURGER = 12101,
+    LAVA_SPAWN = 12265    
+};
     
 class PartyBotEncounters_MC : public PartyBotEncounters
 {
@@ -30,4 +36,11 @@ public:
     static bool GolemaggEncounter(PartyBotAI* pBot);
     static bool MajordomoEncounter(PartyBotAI* pBot);
     static bool RagnarosEncounter(PartyBotAI* pBot);
+
+    static void ResetEncounterVars();
+
+    static bool AnnouncedLivingBomb;
+    static Player* LivingBombTarget;
+    static bool BaronGeddonInferno;
+    static uint32 LastInsultedTime;
 };
