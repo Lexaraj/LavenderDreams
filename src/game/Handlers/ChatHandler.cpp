@@ -40,6 +40,7 @@
 #include "CellImpl.h"
 #include "Anticheat.h"
 #include "AccountMgr.h"
+#include "PlayerBots/PartyBotChat.h"
 
 bool WorldSession::CheckChatMessageValidity(char* msg, uint32 lang, uint32 msgType)
 {
@@ -551,7 +552,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
             ChatHandler::BuildChatPacket(data, ChatMsg(type), msg, Language(lang), _player->GetChatTag(), _player->GetObjectGuid(), _player->GetName());
             group->BroadcastPacket(&data, false, group->GetMemberGroup(GetPlayer()->GetObjectGuid()));
             if (lang != LANG_ADDON)
+            {
                 sWorld.LogChat(this, "Group", msg, nullptr, group->GetId());
+                PartyBotChat::GetInstance()->OnPacketReceived(&data);
+            } 
         }
         break;
         case CHAT_MSG_GUILD: // Master side

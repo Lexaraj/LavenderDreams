@@ -348,9 +348,28 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
     if (GetRole() == ROLE_HEALER)
     {
         if (!m_isStaying) {
-            me->SetCasterChaseDistance(25.0f);
+            me->SetCasterChaseDistance(30.0f);
             me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
         } else {
+            me->GetMotionMaster()->Clear(false, true);
+            me->GetMotionMaster()->MoveIdle();
+        }
+        return true;
+    }
+    else if (GetRole() == ROLE_RANGE_DPS)
+    {
+        if (!m_isStaying)
+        {
+            if (me->Attack(pVictim, false))
+            {
+                me->GetMotionMaster()->Clear(false, true);
+                me->SetCasterChaseDistance(30.0f);
+                me->GetMotionMaster()->MoveChase(pVictim, 30.0f, frand(0, 2 * M_PI));
+                return true;
+            }
+        }
+        else
+        {
             me->GetMotionMaster()->Clear(false, true);
             me->GetMotionMaster()->MoveIdle();
         }
@@ -359,24 +378,16 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
 
     if (me->Attack(pVictim, true))
     {
-        if (GetRole() == ROLE_RANGE_DPS &&
-            me->GetPowerPercent(POWER_MANA) > 10.0f &&
-            me->GetCombatDistance(pVictim) > 8.0f)
-            me->SetCasterChaseDistance(25.0f);
-        else if (me->HasDistanceCasterMovement())
-            me->SetCasterChaseDistance(0.0f);
+        me->SetCasterChaseDistance(0.0f);
 
         if (!m_isStaying)
         {
             if (GetRole() == ROLE_MELEE_DPS)
-            {
                 RepositionMeleeDps();
-            }
-            else
-            {
-                me->SetCasterChaseDistance(GetRole() == ROLE_TANK ? 0.0f : 25.0f);
-                me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
-            }
+
+        } else {
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveIdle();
         }
         
         return true;
@@ -404,7 +415,7 @@ Unit* PartyBotAI::SelectAttackTarget(Player* pLeader) const
     else
     {
         // Stick to marked target in combat.
-        if (me->IsInCombat() || pLeader->GetVictim())
+        if (me->IsInCombat())
         {        
             for (auto markId : m_marksToFocus)
             {
@@ -1011,7 +1022,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                     case IDLE_MOTION_TYPE:
                     case FOLLOW_MOTION_TYPE:
                         bool isMeleeDpsOrTank = (GetRole() == ROLE_MELEE_DPS || GetRole() == ROLE_TANK);
-                        float chaseDistance = isMeleeDpsOrTank ? 0.0f : 25.0f;
+                        float chaseDistance = isMeleeDpsOrTank ? 0.0f : 30.0f;
                         if (!isMeleeDpsOrTank)
                             me->SetCasterChaseDistance(chaseDistance);
 
@@ -1639,10 +1650,10 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
     if (Unit* pVictim = me->GetVictim())
     {
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
-            me->GetDistance(pVictim) > 30.0f &&
+            me->GetDistance(pVictim) > 35.0f &&
             !m_isStaying)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (m_spells.hunter.pVolley &&
@@ -1775,6 +1786,7 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
         if (!me->HasUnitState(UNIT_STATE_ROOT) &&
             (me->GetCombatDistance(pVictim) < 8.0f) &&
             (GetRole() != ROLE_MELEE_DPS) &&
+            !PartyBotEncounters::OverrideRangedPosition() &&
              me->GetMotionMaster()->GetCurrentMovementGeneratorType() != DISTANCING_MOTION_TYPE)
         {
             if (!me->IsStopped())
@@ -1907,9 +1919,9 @@ void PartyBotAI::UpdateInCombatAI_Mage()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
         else if (GetAttackersInRangeCount(10.0f))
         {
@@ -1948,7 +1960,7 @@ void PartyBotAI::UpdateInCombatAI_Mage()
 
                     if (RunAwayFromTarget(pVictim))
                     {
-                        me->SetCasterChaseDistance(25.0f);
+                        me->SetCasterChaseDistance(30.0f);
                         return;
                     }
                 }
@@ -2395,9 +2407,9 @@ void PartyBotAI::UpdateInCombatAI_Priest()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (me->GetShapeshiftForm() == FORM_NONE)
@@ -2598,9 +2610,9 @@ void PartyBotAI::UpdateInCombatAI_Warlock()
         }
 
         if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE
-            && me->GetDistance(pVictim) > 30.0f)
+            && me->GetDistance(pVictim) > 35.0f)
         {
-            me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+            me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
         }
 
         if (m_spells.warlock.pHowlofTerror &&
@@ -3597,11 +3609,11 @@ void PartyBotAI::UpdateInCombatAI_Druid()
         case FORM_MOONKIN:
         {
             if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
-                me->GetDistance(pVictim) > 30.0f)
+                me->GetDistance(pVictim) > 35.0f)
             {
                 if (!m_isStaying)
                 {
-                    me->GetMotionMaster()->MoveChase(pVictim, 25.0f);
+                    me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
                 }
             }
             else if (pVictim->CanReachWithMeleeAutoAttack(me) &&
@@ -3615,7 +3627,7 @@ void PartyBotAI::UpdateInCombatAI_Druid()
                     if (DoCastSpell(pVictim, m_spells.druid.pEntanglingRoots) == SPELL_CAST_OK)
                         return;
                 }
-                me->SetCasterChaseDistance(25.0f);
+                me->SetCasterChaseDistance(30.0f);
                 if (RunAwayFromTarget(pVictim))
                     return;
             }
@@ -3896,33 +3908,6 @@ bool PartyBotAI::SafelyMoveTo(float x, float y, float z, float angle)
     return true;
 }
 
-std::string PartyBotAI::GetHealerTankAnnouncementText(const char* pName)
-{
-    char message[128];
-    uint8 pClass = me->GetClass();
-    
-    switch (pClass)
-    {
-        case CLASS_PRIEST:
-            snprintf(message, sizeof(message), "By the grace of the Light, I stand ready. %s is chosen as the vanguard—I shall be their balm.", pName);
-            break;
-        case CLASS_DRUID:
-            snprintf(message, sizeof(message), "By Nature's blessing, I shall keep %s whole through whatever trials await.", pName);
-            break;
-        case CLASS_PALADIN:
-            snprintf(message, sizeof(message), "The Light guide us—%s stands as my shield. I shall mend the wounds of battle.", pName);
-            break;
-        case CLASS_SHAMAN:
-            snprintf(message, sizeof(message), "The elements grant me power to preserve %s's strength in battle.", pName);
-            break;
-        default:
-            snprintf(message, sizeof(message), "I will focus my healing on %s, our protector. (Class: %d)", pName, pClass);
-            break;
-    }
-    return message;
-}
-
-
 Player* PartyBotAI::GetTankPlayer()
 {
     Group* pGroup = me->GetGroup();
@@ -3948,12 +3933,9 @@ Player* PartyBotAI::GetTankPlayer()
         if (pMember->AI() && dynamic_cast<PartyBotAI*>(pMember->AI()) && 
             dynamic_cast<PartyBotAI*>(pMember->AI())->GetRole() == ROLE_TANK)
         {
-            if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
-            {
-                std::string message = GetHealerTankAnnouncementText(pMember->GetName());
-                SendPartyChat(message.c_str());
-                m_hasAnnouncedTank = true;
-            }
+            if (GetRole() == ROLE_HEALER && !PartyChat->HasHealerAnnouncedTank)
+                PartyChat->HealerAnnounceTank(pMember->GetName(), me);
+            
             return pMember;
         }
         
@@ -3968,12 +3950,9 @@ Player* PartyBotAI::GetTankPlayer()
     // If only one tank-capable class exists, they must be the tank
     if (tankClassCount == 1 && firstTankClass)
     {
-        if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
-        {
-            std::string message = GetHealerTankAnnouncementText(firstTankClass->GetName());
-            SendPartyChat(message.c_str());
-            m_hasAnnouncedTank = true;
-        }
+        if (GetRole() == ROLE_HEALER && !PartyChat->HasHealerAnnouncedTank)
+            PartyChat->HealerAnnounceTank(firstTankClass->GetName(), me);
+        
         return firstTankClass;
     }
 
@@ -4007,23 +3986,17 @@ Player* PartyBotAI::GetTankPlayer()
                 continue;
         }
 
-        if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
-        {
-            std::string message = GetHealerTankAnnouncementText(pMember->GetName());
-            SendPartyChat(message.c_str());
-            m_hasAnnouncedTank = true;
-        }
+        if (GetRole() == ROLE_HEALER && !PartyChat->HasHealerAnnouncedTank)
+            PartyChat->HealerAnnounceTank(pMember->GetName(), me);
+        
         return pMember;
     }
 
     // If no tank is found, return the first party member
     Player* firstMember = pGroup->GetFirstMember()->getSource();
-    if (GetRole() == ROLE_HEALER && !m_hasAnnouncedTank)
-    {
-        std::string message = GetHealerTankAnnouncementText(firstMember->GetName());
-        SendPartyChat(message.c_str());
-        m_hasAnnouncedTank = true;
-    }
+    if (GetRole() == ROLE_HEALER && !PartyChat->HasHealerAnnouncedTank)
+        PartyChat->HealerAnnounceTank(firstMember->GetName(), me);
+    
     return firstMember;
 }
 
@@ -4064,15 +4037,4 @@ bool PartyBotAI::HasEnemiesInRadius(float x, float y, float z, float radius) con
         }
     }
     return false;
-}
-
-void PartyBotAI::SendPartyChat(const char* message) const
-{
-    if (!me || !me->GetGroup())
-        return;
-
-    WorldPacket* data = new WorldPacket();
-    ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message, LANG_UNIVERSAL, CHAT_TAG_NONE, me->GetObjectGuid(), me->GetName());
-    me->GetGroup()->BroadcastPacket(data, false);
-    delete data;
 }
