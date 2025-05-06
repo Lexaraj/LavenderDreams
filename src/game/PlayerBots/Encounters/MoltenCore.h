@@ -1,6 +1,20 @@
 #include "PartyBotAI.h"
 #include "PartyBotEncounters.h"
 
+// Trash Priorities
+#define LAVA_SURGER 12101
+#define LAVA_SPAWN 12265
+
+// Baron Geddon
+#define BARON_LIVINGBOMB 20475
+#define BARON_INFERNO 19695
+#define BARON_IGNITEMANA 19659
+#define BARON_ARMAGEDDON 20478
+
+// Gehennas
+#define GEHENNAS_CURSE 19716
+#define GEHENNAS_RAIN_OF_FIRE 19717
+
 enum EncounterIds
 {
     TYPE_SULFURON  = 0,
@@ -13,12 +27,6 @@ enum EncounterIds
     TYPE_LUCIFRON  = 7,
     TYPE_MAJORDOMO = 8,
     TYPE_RAGNAROS  = 9
-};
-
-enum Bolos
-{
-    LAVA_SURGER = 12101,
-    LAVA_SPAWN = 12265    
 };
     
 class PartyBotEncounters_MC : public PartyBotEncounters
@@ -36,11 +44,12 @@ public:
     static bool GolemaggEncounter(PartyBotAI* pBot);
     static bool MajordomoEncounter(PartyBotAI* pBot);
     static bool RagnarosEncounter(PartyBotAI* pBot);
+    static bool TrashEncounter(PartyBotAI* pBot);
 
     static void ResetEncounterVars();
 
     static bool AnnouncedLivingBomb;
-    static Player* LivingBombTarget;
     static bool BaronGeddonInferno;
     static uint32 LastInsultedTime;
+    static Player* LivingBombTarget;
 };

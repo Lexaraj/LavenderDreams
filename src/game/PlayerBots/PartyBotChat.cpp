@@ -3,7 +3,8 @@
 
 PartyBotChat* PartyBotChat::instance = nullptr;
 
-const std::set<std::string> PartyBotChat::greetings = {
+
+const std::vector<std::string> PartyBotChat::greetings = {
     "hey",
     "hello",
     "hi",
@@ -15,6 +16,43 @@ const std::set<std::string> PartyBotChat::greetings = {
     "whats good",
 };
 
+
+const std::vector<std::string> PartyBotChat::insults = {
+    "fool",
+    "idiot",
+    "noob",
+    "clown",
+    "moron",
+    "imbecile",
+    "dipshit",
+    "faggot",
+    "cunt",
+    "loser",
+    "retard",
+    "nig",
+    "queer",
+    "homo",
+    "rabbit",
+    "rabbi",
+    "bear fucker",
+    "Jackson lover",
+    "Jerry toucher"
+};
+
+
+const std::vector<std::string> PartyBotChat::insultResponses = {
+    "I'm not a fan of your kind",
+    "Fuck you",
+    "Go fuck yourself",
+    "I'm not in the mood for your shit",
+    "Damn chill out",
+    "Tu madre",
+    "Rofl",
+    "Lmao",
+    "Ok",
+    "Whatever",
+    "I'm busy"
+};
 
 PartyBotChat* PartyBotChat::GetInstance()
 {
@@ -59,6 +97,18 @@ std::string PartyBotChat::GetHealerTankAnnouncementText(const char* pName, Playe
 }
 
 
+std::string PartyBotChat::GetInsult()
+{
+    return insults[urand(0, insults.size()-1)];
+}
+
+
+std::string PartyBotChat::GetInsultResponse()
+{
+    return insultResponses[urand(0, insultResponses.size()-1)];
+}
+
+
 void PartyBotChat::SendPartyChat(const char* message, Player* player) const
 {
     if (!player || !player->GetGroup())
@@ -68,6 +118,36 @@ void PartyBotChat::SendPartyChat(const char* message, Player* player) const
     ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message, LANG_UNIVERSAL, CHAT_TAG_NONE, player->GetObjectGuid(), player->GetName());
     player->GetGroup()->BroadcastPacket(data, false);
     delete data;
+}
+
+void PartyBotChat::SendPartyChat(const char* message, Player* player, float delay) const
+{
+    if (!player || !player->GetGroup())
+        return;
+
+    // Schedule this task to execute after delay (milliseconds)
+    if (delay > 0)
+    {
+        auto sendPartyMessage = [message = std::string(message), playerGuid = player->GetObjectGuid()]() {
+            if (Player* playerPtr = sObjectMgr.GetPlayer(playerGuid))
+            {
+                if (Group* group = playerPtr->GetGroup())
+                {
+                    WorldPacket* data = new WorldPacket();
+                    ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE, playerPtr->GetObjectGuid(), playerPtr->GetName());
+                    group->BroadcastPacket(data, false);
+                    delete data;
+                }
+            }
+        };
+        GetSWorld().GetMessager().AddMessage([sendPartyMessage, delay](World* world) {
+            world->AddAsyncTask(sendPartyMessage);
+        });
+    }
+    else
+    {
+        SendPartyChat(message, player);
+    }
 }
 
 
@@ -120,7 +200,7 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
     std::transform(msg.begin(), msg.end(), msg.begin(), ::tolower);
 
     // Greetings
-    if (greetings.find(msg) != greetings.end())
+    if (std::find(greetings.begin(), greetings.end(), msg) != greetings.end())
     {
         if (Group* group = sender->GetGroup())
         {
@@ -135,6 +215,35 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
                     {
                         std::string greeting = *std::next(greetings.begin(), rand() % greetings.size());
                         std::string response = (char)toupper(greeting[0]) + greeting.substr(1) + " " + playerName + "!";
+                        SendPartyChat(response.c_str(), pMember, urand(1000, 4000));
+                    }
+                }
+            }
+        }
+    }
+
+
+    // My name
+    // Check if message contains bot names
+    if (Group* group = sender->GetGroup())
+    {
+        for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (pMember->GetGUIDLow() == playerGuid)
+                    continue;
+
+                if (pMember->AI())
+                {
+                    std::string mName = pMember->GetName();
+                    uint8 mClass = pMember->GetClass();
+                    std::string mNameLower = mName;
+                    std::transform(mNameLower.begin(), mNameLower.end(), mNameLower.begin(), ::tolower);
+
+                    if (msg.find(mNameLower) != std::string::npos)
+                    {
+                        std::string response = GetInsultResponse() + " " + playerName + "!";
                         SendPartyChat(response.c_str(), pMember);
                     }
                 }

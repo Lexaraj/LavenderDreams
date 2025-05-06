@@ -1,17 +1,8 @@
 #include "MoltenCore.h"
 #include "Spells/SpellAuras.h"
+#include "PlayerBots/PartyBotChat.h"
 
-#ifndef M_PI_2
-#define M_PI_2 1.57079632679489661923
-#endif
 
-#define SPELL_DISPEL_MAGIC 988
-#define SPELL_AURA_MOD_DECREASE_HEALTH 4
-#define SPELL_AURA_MOD_DECREASE_SPEED 139
-#define SPELL_LIVINGBOMB 20475
-#define SPELL_INFERNO 19695
-
-#define BARON_GEDDON 12056
 
 bool PartyBotEncounters_MC::AnnouncedLivingBomb = false;
 bool PartyBotEncounters_MC::BaronGeddonInferno = false;
@@ -21,6 +12,7 @@ uint32 PartyBotEncounters_MC::LastInsultedTime = 0;
 void PartyBotEncounters_MC::ResetEncounterVars()
 {
     m_overrideMeleePosition = false;
+    m_overrideRangedPosition = false;
     m_overrideMagicDispel = false;
     AnnouncedLivingBomb = false;
     LivingBombTarget = nullptr;
@@ -61,7 +53,7 @@ bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
         (majordomoState == IN_PROGRESS) ||
         (ragnarosState == IN_PROGRESS || ragnarosState == SPECIAL);
 
-    if (!anyEncounterInProgress)
+    if (!anyEncounterInProgress && !pBot->me->IsInCombat())
         ResetEncounterVars();
     
     if (lucifronState == IN_PROGRESS)
@@ -103,6 +95,82 @@ bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
     else if (ragnarosState == IN_PROGRESS || ragnarosState == SPECIAL)
     {
         return RagnarosEncounter(pBot);
+    }
+    else if (pBot->me->IsInCombat())
+    {
+        return TrashEncounter(pBot);
+    }
+
+    return true;
+}
+
+
+bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
+{
+    Player* pPlayer = pBot->me;
+    if (!pPlayer)
+        return true;
+
+    // Stack on Lava Surgers
+    std::list<Creature*> lavaSurgers;
+    pPlayer->GetCreatureListWithEntryInGrid(lavaSurgers, LAVA_SURGER, 40.0f);
+    if (!lavaSurgers.empty())
+    {
+        Creature* surger = lavaSurgers.front();
+        if (surger && surger->IsAlive())
+        {
+            try {
+                pPlayer->GetMotionMaster()->Clear();
+                pPlayer->GetMotionMaster()->MoveChase(surger, 1.0f);
+                pPlayer->SetCasterChaseDistance(1.0f);
+                pPlayer->GetMotionMaster()->MoveDistance(surger, 1.0f);
+                m_overrideRangedPosition = true;
+            }
+            catch (std::exception& e) {
+                // fail silently
+            }
+        }
+    } else {
+        m_overrideRangedPosition = false;
+    }
+
+    // Focus Lava Spawns
+    std::list<Creature*> lavaSpawns;
+    pPlayer->GetCreatureListWithEntryInGrid(lavaSpawns, LAVA_SPAWN, 40.0f);
+    if (!lavaSpawns.empty())
+    {
+        // Check if any party members are targeting a lava spawn
+        bool assist = false;
+        if (Group* pGroup = pPlayer->GetGroup())
+        {
+            for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+            {
+                if (Player* member = itr->getSource())
+                {
+                    if (member != pPlayer && member->IsAlive())
+                    {
+                        if (Unit* memberTarget = member->GetVictim())
+                        {
+                            if (memberTarget->GetEntry() == LAVA_SPAWN)
+                            {
+                                // Set our target to the same lava spawn
+                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
+                                pBot->SendPartyChat(("Assisting " + std::string(member->GetName()) + " on lava spawn").c_str());
+                                assist = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!assist)
+        {
+            Creature* spawn = lavaSpawns.front();
+            pPlayer->SetTargetGuid(spawn->GetObjectGuid());
+            pBot->SendPartyChat("Focusing on lava spawn");
+        }
     }
 
     return true;
@@ -353,13 +421,43 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
     Player* pPlayer = pBot->me;
     if (!pPlayer)
         return true;
+    
+    if (!pPlayer->IsAlive())
+        return true;
+
+    // Healers need to prioritize dispelling Ignite Mana
+    uint8 pClass = pPlayer->GetClass();
+    if (pClass == CLASS_PRIEST || pClass == CLASS_PALADIN)
+    {
+        if (pPlayer->HasAura(BARON_IGNITEMANA))
+        {
+            PartyBotEncounters::DispelMagic(pBot, pPlayer);
+        }
+        else if (Group* group = pPlayer->GetGroup())
+        {
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+            {
+                if (Player* member = itr->getSource())
+                {
+                    if (member->IsAlive() && member->HasAura(BARON_IGNITEMANA))
+                    {
+                        if (member->GetPowerType() == POWER_MANA)
+                            PartyBotEncounters::DispelMagic(pBot, member);
+                    }
+                }
+            }
+        }
+    }
 
     if (pPlayer->IsMoving() && !BaronGeddonInferno)
         return false;
+
+    Unit* baron = pBot->SelectAttackTarget(pBot->GetPartyLeader());
     
-    if (pPlayer->HasAura(SPELL_LIVINGBOMB))
+    // Handle living bomb
+    if (pPlayer->HasAura(BARON_LIVINGBOMB))
     {
-        uint32 timeLeft = pPlayer->GetSpellAuraHolder(SPELL_LIVINGBOMB)->GetAuraDuration();
+        uint32 timeLeft = pPlayer->GetSpellAuraHolder(BARON_LIVINGBOMB)->GetAuraDuration();
         
         LivingBombTarget = pPlayer;
 
@@ -379,15 +477,16 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
             {
                 // Run away from other players
                 float baseAngle = pPlayer->GetAngle(nearbyPlayers.front());
-                float moveDist = 20.0f;
-                bool foundSafeSpot = false;
+                float moveDist = 15.0f;
                 
                 // Try different angles to find a safe spot
-                for (int i = 0; i < 360; i++)
-                {
-                    float testAngle = baseAngle + (i * M_PI / 4);
-                    float newX = pPlayer->GetPositionX() + moveDist * cos(testAngle + M_PI);
-                    float newY = pPlayer->GetPositionY() + moveDist * sin(testAngle + M_PI);
+                bool foundSafeSpot = false;
+                float currentDist = moveDist;
+                int angleIndex = 0;
+                do {
+                    float testAngle = baseAngle + (angleIndex * M_PI);
+                    float newX = pPlayer->GetPositionX() + currentDist * cos(testAngle + M_PI);
+                    float newY = pPlayer->GetPositionY() + currentDist * sin(testAngle + M_PI);
                     float newZ = pPlayer->GetPositionZ();
 
                     // Check if this position is safe from other players
@@ -403,12 +502,10 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
 
                     // Check if this position is safe from the boss
                     bool safeFromBoss = true;
-                    if (Unit* pBoss = pPlayer->GetVictim())
+                    if (baron)
                     {
-                        if (pBoss->GetDistance2d(newX, newY) < 30.0f)
-                        {
+                        if (baron->GetDistance2d(newX, newY) < 30.0f)
                             safeFromBoss = false;
-                        }
                     }
 
                     if (safeFromPlayers && safeFromBoss)
@@ -417,16 +514,32 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
                         {
                             uint32 currentTime = WorldTimer::getMSTime();
                             if (currentTime - pBot->m_lastMoveTime > 7000)
+                            {
                                 pBot->SendPartyChat("Running away from players!");
+                                pBot->m_lastMoveTime = currentTime;
+                                foundSafeSpot = true;
+                                return false;
+                            }
+                        }
+                    }
+                    angleIndex++;
+                    if (angleIndex >= 359) // After trying all angles at current distance
+                    {
+                        angleIndex = 0;
+                        currentDist += 5.0f; // Increase distance by 5 yards each iteration
+                    }
+                } while (!foundSafeSpot && currentDist <= 50.0f);
 
-                            pBot->m_lastMoveTime = currentTime;
-                            foundSafeSpot = true;
-                            return false;
-                        }
-                        else
-                        {
-                            pBot->SendPartyChat("Failed to move to safe spot");
-                        }
+                if (!foundSafeSpot)
+                {
+                    uint32 currentTime = WorldTimer::getMSTime();
+                    if (currentTime - pBot->m_lastMoveTime > 4000)
+                    {
+                        pBot->SendPartyChat("brb squatting on a breadstick");
+                        Player* pDaddy = nearbyPlayers.front();
+                        pPlayer->GetMotionMaster()->MoveDistance(pDaddy, 15.0f);
+                        pBot->m_lastMoveTime = currentTime;
+                        return false;
                     }
                 }
             }
@@ -435,29 +548,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
                 uint32 currentTime = WorldTimer::getMSTime();
                 if (currentTime - LastInsultedTime > 5000)
                 {
-                    std::vector<std::string> insults = {
-                        "fool",
-                        "idiot",
-                        "noob",
-                        "clown",
-                        "moron",
-                        "imbecile",
-                        //--------------------------------
-                        "dipshit",
-                        "faggot",
-                        "cunt",
-                        "loser",
-                        "retard",
-                        "nig",
-                        "queer",
-                        "homo",
-                        "rabbit",
-                        "rabbi",
-                        "bear fucker",
-                        "Jackson lover"
-                        "Jerry toucher"
-                    };
-                    std::string insult = insults[urand(0, insults.size()-1)];
+                    std::string insult = PartyBotChat::GetInsult();
                     std::string message = nearbyPlayers.size() > 1 ? 
                         ("Get away from me you " + insult + "s!!") : 
                         (std::string(nearbyPlayers.front()->GetName()) + ", run away from me you " + insult + "!");
@@ -469,11 +560,14 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
                     {
                         if (nearPlayer->AI() && nearPlayer->GetDistance(pPlayer) < 14.0f)
                         {
+                            PartyBotAI* paiNear = dynamic_cast<PartyBotAI*>(nearPlayer->AI());
+                            if (paiNear)
+                            {
+                                std::string response = PartyBotChat::GetInsultResponse();
+                                paiNear->SendPartyChat(response.c_str(), urand(1000, 3000));
+                                paiNear->m_lastMoveTime = currentTime;
+                            }
                             nearPlayer->GetMotionMaster()->MoveDistance(pPlayer, 15.0f);
-
-                            PartyBotAI* pMer = dynamic_cast<PartyBotAI*>(nearPlayer->AI());
-                            if (pMer)
-                                pMer->m_lastMoveTime = -1.0f;
                         }
                     }
                 }
@@ -484,15 +578,14 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
     {
         if (pPlayer == LivingBombTarget)
         {
-            pBot->m_lastMoveTime = 0;
             AnnouncedLivingBomb = false;
             LivingBombTarget = nullptr;
         }
     }
 
+
     // Handle inferno
-    Unit* baron = pBot->SelectPartyAttackTarget();
-    if (baron && baron->HasAura(SPELL_INFERNO))
+    if (baron && baron->HasAura(BARON_INFERNO))
     {
         BaronGeddonInferno = true;
 
@@ -504,14 +597,56 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
         }
 
         // dont move if we're waiting for inferno to stop
-        pPlayer->SetOrientation(pPlayer->GetAngle(baron));
-        pPlayer->GetMotionMaster()->Clear();
-        pPlayer->GetMotionMaster()->MoveIdle();
-        return false;
+        if (LivingBombTarget != pPlayer)
+        {
+            pPlayer->GetMotionMaster()->Clear();
+            pPlayer->GetMotionMaster()->MoveIdle();
+            return false;
+        }
+        else
+        {
+            // Move away from other players since we have living bomb
+            std::list<Player*> nearbyPlayers;
+            pPlayer->GetAlivePlayerListInRange(pPlayer, nearbyPlayers, 15.0f);
+            nearbyPlayers.remove(pPlayer);
+
+            if (!nearbyPlayers.empty())
+            {
+                pBot->SendPartyChat("Living bomb on me, running away!");
+                float baseAngle = pPlayer->GetAngle(nearbyPlayers.front());
+                float moveDist = 15.0f;
+                float newX = pPlayer->GetPositionX() + moveDist * cos(baseAngle);
+                float newY = pPlayer->GetPositionY() + moveDist * sin(baseAngle);
+                float newZ = pPlayer->GetPositionZ();
+                pPlayer->GetMotionMaster()->Clear();
+                pBot->SafelyMoveTo(newX, newY, newZ, pPlayer->GetAngle(baron));
+                return false;
+            }
+        }
     }
     else
     {
         BaronGeddonInferno = false;
+
+        if(baron)
+        {
+            // run out if we're too close to the boss
+            if ((pBot->GetRole() == ROLE_HEALER || pBot->GetRole() == ROLE_RANGE_DPS) &&
+                !pBot->IsStaying())
+            {
+                if (pPlayer->GetDistance(baron) < 25.0f && 
+                !pPlayer->IsMoving() && !pPlayer->IsNonMeleeSpellCasted())
+                {
+                    pPlayer->GetMotionMaster()->MoveDistance(baron, 30.0f);
+                    return false;
+                }
+
+                // Ensure we're facing the boss
+                pPlayer->SetCasterChaseDistance(32.0f);
+                pPlayer->GetMotionMaster()->MoveChase(baron, 30.0f, frand(0, M_PI / 2));
+                pBot->AttackStart(baron);                
+            }
+        }
     }
 
     return true;
