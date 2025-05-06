@@ -356,25 +356,38 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
         }
         return true;
     }
+    else if (GetRole() == ROLE_RANGE_DPS)
+    {
+        if (!m_isStaying)
+        {
+            if (me->Attack(pVictim, false))
+            {
+                me->GetMotionMaster()->Clear(false, true);
+                me->SetCasterChaseDistance(30.0f);
+                me->GetMotionMaster()->MoveChase(pVictim, 30.0f, frand(0, 2 * M_PI));
+                return true;
+            }
+        }
+        else
+        {
+            me->GetMotionMaster()->Clear(false, true);
+            me->GetMotionMaster()->MoveIdle();
+        }
+        return true;
+    }
 
     if (me->Attack(pVictim, true))
     {
-        if (GetRole() == ROLE_RANGE_DPS)
-            me->SetCasterChaseDistance(30.0f);
-        else if (me->HasDistanceCasterMovement())
-            me->SetCasterChaseDistance(0.0f);
+        me->SetCasterChaseDistance(0.0f);
 
         if (!m_isStaying)
         {
             if (GetRole() == ROLE_MELEE_DPS)
-            {
                 RepositionMeleeDps();
-            }
-            else
-            {
-                me->SetCasterChaseDistance(GetRole() == ROLE_TANK ? 0.0f : 30.0f);
-                me->GetMotionMaster()->MoveChase(pVictim, 1.0f, 0.0f);
-            }
+
+        } else {
+            me->GetMotionMaster()->Clear();
+            me->GetMotionMaster()->MoveIdle();
         }
         
         return true;
@@ -402,7 +415,7 @@ Unit* PartyBotAI::SelectAttackTarget(Player* pLeader) const
     else
     {
         // Stick to marked target in combat.
-        if (me->IsInCombat() || pLeader->GetVictim())
+        if (me->IsInCombat())
         {        
             for (auto markId : m_marksToFocus)
             {
@@ -1773,6 +1786,7 @@ void PartyBotAI::UpdateInCombatAI_Hunter()
         if (!me->HasUnitState(UNIT_STATE_ROOT) &&
             (me->GetCombatDistance(pVictim) < 8.0f) &&
             (GetRole() != ROLE_MELEE_DPS) &&
+            !PartyBotEncounters::OverrideRangedPosition() &&
              me->GetMotionMaster()->GetCurrentMovementGeneratorType() != DISTANCING_MOTION_TYPE)
         {
             if (!me->IsStopped())
