@@ -1072,6 +1072,10 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
     sObjectAccessor.AddObject(newChar);
     newChar->SetCanModifyStats(true);
 
+    // Reset the name-to-GUID mapping to point to the original character
+    // (Prevents "Error cloning player" when cloning a player that has already been cloned)
+    sObjectMgr.m_playerNameToGuid[name] = guid.GetCounter();
+
     // Clone skills
     result = CharacterDatabase.PQuery(
         "SELECT skill, value, max FROM character_skills WHERE guid = %u", 
@@ -1087,7 +1091,6 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
             newChar->SetSkill(skillId, value, maxValue);
         } while (result->NextRow());
     }
-
 
     // Clone spells
     result = CharacterDatabase.PQuery(
