@@ -13,8 +13,23 @@ const std::vector<std::string> PartyBotChat::greetings = {
     "yo",
     "sup",
     "what's good",
-    "whats good",
+    "what up",
+    "what's up",
+    "what's poppin",
+    
 };
+
+
+const std::vector<std::string> PartyBotChat::affirmativeSuccess = {
+    "got you",
+    "gotcha",
+    "you got it",
+    "coming right up",
+    "on it",
+    "roger that",
+    "incoming"
+};
+
 
 
 const std::vector<std::string> PartyBotChat::insults = {
@@ -100,6 +115,12 @@ std::string PartyBotChat::GetHealerTankAnnouncementText(const char* pName, Playe
 std::string PartyBotChat::GetInsult()
 {
     return insults[urand(0, insults.size()-1)];
+}
+
+
+std::string PartyBotChat::GetAffirmativeSuccess()
+{
+    return affirmativeSuccess[urand(0, affirmativeSuccess.size()-1)];
 }
 
 
@@ -243,11 +264,41 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
 
                     if (msg.find(mNameLower) != std::string::npos)
                     {
-                        std::string response = GetInsultResponse() + " " + playerName + "!";
-                        SendPartyChat(response.c_str(), pMember);
+                        // i've been spoken to
+                        ProcessDirectMessage(senderGuid, message, pMember);
                     }
                 }
             }
         }
     }
+}
+
+
+void PartyBotChat::ProcessDirectMessage(ObjectGuid const& senderGuid, std::string const& message, Player* player)
+{
+    Player* sender = ObjectAccessor::FindPlayer(senderGuid);
+    if (!sender)
+        return;
+
+    // look for commands in the message
+    std::string messageLower = message;
+    std::transform(messageLower.begin(), messageLower.end(), messageLower.begin(), ::tolower);
+    if (messageLower.find("hot me") != std::string::npos)
+    {
+        if (HandleHotMeCommand(player, sender))
+        {
+            char message[128];
+            snprintf(message, sizeof(message), "Got you %s!", sender->GetName());
+            SendPartyChat(message, player);
+        }
+    }
+    
+}
+
+
+bool PartyBotChat::HandleHotMeCommand(Player* player, Player* sender)
+{
+    // cast a HoT on the sender if I'm a healer
+    
+    return true;
 }
