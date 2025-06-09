@@ -15,6 +15,7 @@
 #include "BattleBotAI.h"
 #include "BattleBotWaypoints.h"
 #include "BattleGroundMgr.h"
+#include "MapManager.h"
 #include "Language.h"
 #include "Spell.h"
 
