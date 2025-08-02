@@ -45,7 +45,7 @@ enum
     SAY_DEATH                   = 10450,
 
     SPELL_SHADOWWORDPAIN        = 24212, // Mot de l'ombre : douleur
-    SPELL_GOUGE                 = 12540, // Suriner
+    //SPELL_GOUGE                 = 12540, // Suriner
     SPELL_MARK                  = 24210,
     SPELL_CLEAVE                = 26350,                    //Perhaps not right. Not a red aura...
     SPELL_PANTHER_TRANSFORM     = 24190,
@@ -83,7 +83,7 @@ struct boss_arlokkAI : public ScriptedAI
     ScriptedInstance* m_pInstance;
 
     uint32 m_uiShadowWordPain_Timer;
-    uint32 m_uiGouge_Timer;
+    //uint32 m_uiGouge_Timer;
     uint32 m_uiMark_Timer;
     uint32 m_uiThrash_Timer;
     uint32 m_uiVanish_Timer;
@@ -275,7 +275,7 @@ struct boss_arlokkAI : public ScriptedAI
             else
                 m_uiRavage_Timer -= uiDiff;
 
-            //Gouge_Timer
+            /*//Gouge_Timer
             if (m_uiGouge_Timer < uiDiff)
             {
                 if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_GOUGE) == CAST_OK)
@@ -285,7 +285,7 @@ struct boss_arlokkAI : public ScriptedAI
 
                     m_uiGouge_Timer = urand(17000, 27000);
                 }
-            }
+            }*/
             else
                 m_uiGouge_Timer -= uiDiff;
 

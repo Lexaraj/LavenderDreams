@@ -92,7 +92,7 @@ struct boss_jeklikAI : public ScriptedAI
 
         Screech_Timer = 25000;
 
-        ShadowWordPain_Timer  = 9000;
+        ShadowWordPain_Timer  = 15000;
         CurseOfBlood_Timer    = 26000;
         MindFlay_Timer        = 15000;
         GreatHeal_Timer       = 20000;
@@ -320,7 +320,7 @@ struct boss_jeklikAI : public ScriptedAI
                     {
                         if (DoCastSpellIfCan(target, SPELL_SHADOW_WORD_PAIN) == CAST_OK)
                         {
-                            ShadowWordPain_Timer = urand(8000, 12000);
+                            ShadowWordPain_Timer = urand(12000, 15000);
                             GlobalCooldown       = 1000;
                             skillStarted         = true;
                         }
