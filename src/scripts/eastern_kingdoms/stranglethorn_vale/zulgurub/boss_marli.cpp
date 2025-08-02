@@ -77,12 +77,12 @@ struct boss_marliAI : public ScriptedAI
 
     void Reset() override
     {
-        m_uiPoisonVolley_Timer = 15000;
-        m_uiSpawnSpider_Timer = 20000;
+        m_uiPoisonVolley_Timer = 25000;
+        m_uiSpawnSpider_Timer = 30000;
         m_uiAspect_Timer = 12000;
         m_uiTransformBack_Timer = 35000;
-        m_uiDrainLife_Timer = 30000;
-        m_uiCorrosivePoison_Timer = 1000;
+        m_uiDrainLife_Timer = 35000;
+        m_uiCorrosivePoison_Timer = 20000;
         m_uiWebs_Timer = 5000;
         m_uiTrash_Timer = 5000;
         m_uiAggrandir_Timer = 0;
@@ -137,7 +137,7 @@ struct boss_marliAI : public ScriptedAI
             DoScriptText(SAY_SPIDER_SPAWN, m_creature);
             DoCastSpellIfCan(m_creature, SPELL_HATCH);
 
-            for (uint8 i = 0; i < 4 ; ++i)
+            for (uint8 i = 0; i < 2 ; ++i)
             {
                 if (GameObject *pEgg = SelectNextEgg())
                 {
@@ -213,7 +213,7 @@ struct boss_marliAI : public ScriptedAI
             if (m_uiPoisonVolley_Timer < uiDiff)
             {
                 DoCastSpellIfCan(m_creature->GetVictim(), SPELL_POISONVOLLEY);
-                m_uiPoisonVolley_Timer = urand(10000, 20000);
+                m_uiPoisonVolley_Timer = urand(25000, 30000);
             }
             else
                 m_uiPoisonVolley_Timer -= uiDiff;
@@ -221,15 +221,15 @@ struct boss_marliAI : public ScriptedAI
             if (m_uiDrainLife_Timer < uiDiff)
             {
                 DoCastSpellIfCan(m_creature->GetVictim(), SPELL_DRAIN_LIFE);
-                m_uiDrainLife_Timer = urand(20000, 50000);
+                m_uiDrainLife_Timer = urand(35000, 50000);
             }
             else
                 m_uiDrainLife_Timer -= uiDiff;
 
             if (m_uiSpawnSpider_Timer < uiDiff)
             {
-                // Mar'li doit invoquer entre 1 et 4 "rejetons"
-                uint32 uiInvocCount = urand(1, 4);
+                // Mar'li doit invoquer entre 1 et 4 "rejetons" Lavender Dreams - 1-2 summons
+                uint32 uiInvocCount = urand(1, 2);
                 for (uint8 i = 0; i < uiInvocCount; ++i)
                 {
                     if (GameObject *pEgg = SelectNextEgg())
@@ -238,7 +238,7 @@ struct boss_marliAI : public ScriptedAI
                         m_creature->SummonCreature(NPC_SPAWN_OF_MARLI, pEgg->GetPositionX(), pEgg->GetPositionY(), pEgg->GetPositionZ(), 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
                     }
                 }
-                m_uiSpawnSpider_Timer = urand(20000, 30000);
+                m_uiSpawnSpider_Timer = urand(30000, 40000);
             }
             else
                 m_uiSpawnSpider_Timer -= uiDiff;
@@ -260,7 +260,7 @@ struct boss_marliAI : public ScriptedAI
             if (!m_bHasWebbed && m_uiWebs_Timer < uiDiff)
             {
                 DoCastSpellIfCan(m_creature->GetVictim(), SPELL_ENVELOPINGWEBS);
-                m_uiWebs_Timer = urand(10000, 15000);
+                m_uiWebs_Timer = urand(30000, 35000);
                 m_uiCharge_Timer = 1000;
                 m_bHasWebbed = true;
             }
@@ -289,7 +289,7 @@ struct boss_marliAI : public ScriptedAI
                         }
                     */
                 }
-                m_uiWebs_Timer = urand(10000, 20000);
+                m_uiWebs_Timer = urand(30000, 35000);
             }
             else
                 m_uiCharge_Timer -= uiDiff;
@@ -297,7 +297,7 @@ struct boss_marliAI : public ScriptedAI
             if (m_uiCorrosivePoison_Timer < uiDiff)
             {
                 DoCastSpellIfCan(m_creature->GetVictim(), SPELL_CORROSIVE_POISON);
-                m_uiCorrosivePoison_Timer = urand(25000, 35000);
+                m_uiCorrosivePoison_Timer = urand(35000, 45000);
             }
             else
                 m_uiCorrosivePoison_Timer -= uiDiff;

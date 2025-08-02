@@ -56,8 +56,8 @@ enum
 
     // Watch - Surveille un membre du raid. Si ce joueur bouge, attaque ou cast pendant que Mandokir le surveille, Mandokir le charge et le decapite.
     // OK
-    //SPELL_WATCH         = 24314,
-    //SPELL_DECAPITATE    = 24315,
+    SPELL_WATCH         = 24314,
+    SPELL_DECAPITATE    = 24315,
     SPELL_SUMMON_PLAYER = 25104,
 
     // Level-up - Chaque fois que Mandokir tue un joueur, il gagne un niveau.

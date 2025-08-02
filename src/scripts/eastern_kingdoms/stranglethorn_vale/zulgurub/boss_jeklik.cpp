@@ -83,20 +83,20 @@ struct boss_jeklikAI : public ScriptedAI
 
     void Reset() override
     {
-        SpawnBats_Timer = 40000;
+        SpawnBats_Timer = 45000;
 
         Charge_Timer      = 10000;
-        SonicBurst_Timer  = 12000;
-        Swoop_Timer       = 8000;
-        PierceArmor_Timer = 9000;
+        SonicBurst_Timer  = 20000;
+        Swoop_Timer       = 15000;
+        PierceArmor_Timer = 30000;
 
-        Screech_Timer = 12000;
+        Screech_Timer = 25000;
 
         ShadowWordPain_Timer  = 9000;
         CurseOfBlood_Timer    = 26000;
-        MindFlay_Timer        = 2000;
+        MindFlay_Timer        = 15000;
         GreatHeal_Timer       = 20000;
-        SpawnFlyingBats_Timer = 10000;
+        SpawnFlyingBats_Timer = 30000;
 
         GlobalCooldown = 0;
         PhaseTwo       = false;
@@ -166,7 +166,7 @@ struct boss_jeklikAI : public ScriptedAI
             if (SpawnBats_Timer < lastDiff)
             {
                 DoScriptText(TEXT_SUMMON_BATS, m_creature);
-                for (uint8 i = 0; i < 6; ++i)
+                for (uint8 i = 0; i < 3; ++i)
                 {
                     Creature* Bat = m_creature->SummonCreature(11368, -12294.0f + frand(0.0f, 5.0f), -1382.0f + frand(0.0f, 5.0f), 144.8304f, 5.483f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
                     if (Bat && Bat->AI())
@@ -175,7 +175,7 @@ struct boss_jeklikAI : public ScriptedAI
                             Bat->AI()->AttackStart(pTarget);
                     }
                 }
-                SpawnBats_Timer = 65000;
+                SpawnBats_Timer = 45000;
             }
             else
                 SpawnBats_Timer -= lastDiff;
@@ -195,7 +195,7 @@ struct boss_jeklikAI : public ScriptedAI
                         DoScriptText(SAY_RAIN_FIRE, m_creature);
                     }
                 }
-                SpawnFlyingBats_Timer = 10000;
+                SpawnFlyingBats_Timer = 30000;
             }
             else
                 SpawnFlyingBats_Timer -= lastDiff;
@@ -249,7 +249,7 @@ struct boss_jeklikAI : public ScriptedAI
                     if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_SCREECH) == CAST_OK)
                     {
                         skillStarted   = true;
-                        Screech_Timer  = 30000;
+                        Screech_Timer  = 25000;
                         GlobalCooldown = 1000;
                     }
                     else
@@ -299,7 +299,7 @@ struct boss_jeklikAI : public ScriptedAI
                     if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_PIERCEARMOR) == CAST_OK)
                     {
                         skillStarted      = true;
-                        PierceArmor_Timer = urand(16000, 18000);
+                        PierceArmor_Timer = urand(30000, 35000);
                         GlobalCooldown    = 1000;
                     }
                 }
@@ -404,7 +404,7 @@ struct mob_batriderAI : public ScriptedAI
 
     void Reset() override
     {
-        Bomb_Timer = 2000;
+        Bomb_Timer = 25000;
     }
 
     void AttackStart(Unit *pWho) override
@@ -420,7 +420,7 @@ struct mob_batriderAI : public ScriptedAI
         if (Bomb_Timer)
             return;
 
-        Bomb_Timer = urand(5000, 10000);
+        Bomb_Timer = urand(15000, 25000);
 
         if (Creature* pJeklik = m_creature->FindNearestCreature(NPC_JEKLIK, 150.0f))
         {
