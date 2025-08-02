@@ -2,12 +2,14 @@
 #include "Spells/SpellAuras.h"
 #include "PlayerBots/PartyBotChat.h"
 
+// General
+uint32 PartyBotEncounters_MC::LastInsultedTime = 0;
 
-
+// Baron Geddon
 bool PartyBotEncounters_MC::AnnouncedLivingBomb = false;
 bool PartyBotEncounters_MC::BaronGeddonInferno = false;
 Player* PartyBotEncounters_MC::LivingBombTarget = nullptr;
-uint32 PartyBotEncounters_MC::LastInsultedTime = 0;
+
 
 void PartyBotEncounters_MC::ResetEncounterVars()
 {
@@ -18,6 +20,7 @@ void PartyBotEncounters_MC::ResetEncounterVars()
     LivingBombTarget = nullptr;
     LastInsultedTime = 0;
 }
+
 
 bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
 {
@@ -62,7 +65,7 @@ bool PartyBotEncounters_MC::HandleEncounterAI(PartyBotAI* pBot)
     }
     else if (magmadarState == IN_PROGRESS)
     {
-        return MagmadarEncounter(pBot);
+       return MagmadarEncounter(pBot);
     }
     else if (gehennasState == IN_PROGRESS)
     {
@@ -134,15 +137,22 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
         m_overrideRangedPosition = false;
     }
 
+    if (pBot->GetRole() == ROLE_HEALER)
+        return true;
+
     // Focus Lava Spawns
     std::list<Creature*> lavaSpawns;
     pPlayer->GetCreatureListWithEntryInGrid(lavaSpawns, LAVA_SPAWN, 40.0f);
+    
+    // Filter out dead lava spawns
+    lavaSpawns.remove_if([](Creature* spawn) { return !spawn || !spawn->IsAlive(); });
+    
     if (!lavaSpawns.empty())
     {
-        // Check if any party members are targeting a lava spawn
         bool assist = false;
         if (Group* pGroup = pPlayer->GetGroup())
         {
+            // First check if any group member is already targeting a lava spawn
             for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
             {
                 if (Player* member = itr->getSource())
@@ -151,11 +161,12 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                     {
                         if (Unit* memberTarget = member->GetVictim())
                         {
-                            if (memberTarget->GetEntry() == LAVA_SPAWN)
+                            if (memberTarget->GetEntry() == LAVA_SPAWN && 
+                                memberTarget->IsAlive() &&
+                                pPlayer->GetVictim() != memberTarget)
                             {
-                                // Set our target to the same lava spawn
-                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
                                 pBot->SendPartyChat(("Assisting " + std::string(member->GetName()) + " on lava spawn").c_str());
+                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
                                 assist = true;
                                 break;
                             }
@@ -163,13 +174,18 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                     }
                 }
             }
-        }
 
-        if (!assist)
-        {
-            Creature* spawn = lavaSpawns.front();
-            pPlayer->SetTargetGuid(spawn->GetObjectGuid());
-            pBot->SendPartyChat("Focusing on lava spawn");
+            // If no one is targeting a lava spawn, pick the first available one
+            if (!assist)
+            {
+                Creature* firstAvailableSpawn = lavaSpawns.front();
+                if (firstAvailableSpawn && 
+                    pPlayer->GetVictim() != firstAvailableSpawn)
+                {
+                    pBot->SendPartyChat("Focusing on lava spawn!");
+                    pPlayer->SetTargetGuid(firstAvailableSpawn->GetObjectGuid());
+                }
+            }
         }
     }
 
@@ -416,6 +432,7 @@ bool PartyBotEncounters_MC::GarrEncounter(PartyBotAI* pBot)
     return true;
 }
 
+
 bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
 {
     Player* pPlayer = pBot->me;
@@ -652,6 +669,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
     return true;
 }
 
+
 bool PartyBotEncounters_MC::ShazzrahEncounter(PartyBotAI* pBot)
 {
     Player* pPlayer = pBot->me;
@@ -660,6 +678,7 @@ bool PartyBotEncounters_MC::ShazzrahEncounter(PartyBotAI* pBot)
 
     return true;
 }
+
 
 bool PartyBotEncounters_MC::SulfuronEncounter(PartyBotAI* pBot)
 {
@@ -670,6 +689,7 @@ bool PartyBotEncounters_MC::SulfuronEncounter(PartyBotAI* pBot)
     return true;
 }
 
+
 bool PartyBotEncounters_MC::GolemaggEncounter(PartyBotAI* pBot)
 {
     Player* pPlayer = pBot->me;
@@ -678,6 +698,7 @@ bool PartyBotEncounters_MC::GolemaggEncounter(PartyBotAI* pBot)
 
     return true;
 }
+
 
 bool PartyBotEncounters_MC::MajordomoEncounter(PartyBotAI* pBot)
 {
@@ -695,6 +716,7 @@ bool PartyBotEncounters_MC::MajordomoEncounter(PartyBotAI* pBot)
 
     return true;
 }
+
 
 bool PartyBotEncounters_MC::RagnarosEncounter(PartyBotAI* pBot)
 {
