@@ -56,8 +56,8 @@ enum
 
     // Watch - Surveille un membre du raid. Si ce joueur bouge, attaque ou cast pendant que Mandokir le surveille, Mandokir le charge et le decapite.
     // OK
-    SPELL_WATCH         = 24314,
-    SPELL_DECAPITATE    = 24315,
+    //SPELL_WATCH         = 24314,
+    //SPELL_DECAPITATE    = 24315,
     SPELL_SUMMON_PLAYER = 25104,
 
     // Level-up - Chaque fois que Mandokir tue un joueur, il gagne un niveau.
@@ -473,7 +473,7 @@ struct boss_mandokirAI : public ScriptedAI
                         {
                             DoScriptText(SAY_WATCH, m_creature, pTarget);
                             DoScriptText(SAY_WATCH_WHISPER, m_creature, pTarget);
-                            m_uiWatch_Timer = 20000;
+                            m_uiWatch_Timer = 30000;
                             m_uiGlobalCooldown = 1;
                             if (m_uiCharge_Timer < 9000)
                                 m_uiCharge_Timer = 9000;
@@ -511,10 +511,6 @@ struct boss_mandokirAI : public ScriptedAI
                                 bTargetKilled = true;
                             // TODO: Mandokir should also cast a sound explosion, after charging the player
                         }
-                        if (!bTargetKilled)
-                            m_creature->DoKillUnit(pTargetToKill);
-                        if(pTargetToKill->IsAlive())
-                            m_creature->DoKillUnit(pTargetToKill);
                         m_uiGlobalCooldown = 1000;
                         m_uiTargetToKill = 0;
                     }

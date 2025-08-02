@@ -61,7 +61,7 @@ enum
 
     NPC_ZULIAN_PROWLER          = 15101,
 //    NPC_ARLOKK                  = 14515, // zulgurub.h
-    MAX_PANTHER_COUNT           = 30,
+    MAX_PANTHER_COUNT           = 7,
 
     GO_ARLOKK_FORCE_FIELD       = 180497,
     GO_ARLOKK_GONG              = 180526
@@ -117,7 +117,7 @@ struct boss_arlokkAI : public ScriptedAI
         m_uiTourbillon_Timer = 4000; // Timer incertain
         m_uiRavage_Timer = 15000;
 
-        m_uiSummon_Timer = 5000;
+        m_uiSummon_Timer = 10000;
         m_uiSummonCount = 0;
 
         m_bIsPhaseTwo = false;
@@ -303,7 +303,7 @@ struct boss_arlokkAI : public ScriptedAI
             if (m_uiSummon_Timer < uiDiff)
             {
                 DoSummonPhanters();
-                m_uiSummon_Timer = 5000;
+                m_uiSummon_Timer = 10000;
             }
             else
                 m_uiSummon_Timer -= uiDiff;
