@@ -166,7 +166,7 @@ struct boss_jeklikAI : public ScriptedAI
             if (SpawnBats_Timer < lastDiff)
             {
                 DoScriptText(TEXT_SUMMON_BATS, m_creature);
-                for (uint8 i = 0; i < 3; ++i)
+                for (uint8 i = 0; i < 2; ++i)
                 {
                     Creature* Bat = m_creature->SummonCreature(11368, -12294.0f + frand(0.0f, 5.0f), -1382.0f + frand(0.0f, 5.0f), 144.8304f, 5.483f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
                     if (Bat && Bat->AI())
