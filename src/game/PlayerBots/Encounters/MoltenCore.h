@@ -48,8 +48,9 @@ public:
 
     static void ResetEncounterVars();
 
+    static uint32 LastInsultedTime;
+
     static bool AnnouncedLivingBomb;
     static bool BaronGeddonInferno;
-    static uint32 LastInsultedTime;
     static Player* LivingBombTarget;
 };
