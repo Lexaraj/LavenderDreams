@@ -61,7 +61,7 @@ enum
 
     NPC_ZULIAN_PROWLER          = 15101,
 //    NPC_ARLOKK                  = 14515, // zulgurub.h
-    MAX_PANTHER_COUNT           = 7,
+    MAX_PANTHER_COUNT           = 6,
 
     GO_ARLOKK_FORCE_FIELD       = 180497,
     GO_ARLOKK_GONG              = 180526
@@ -106,7 +106,7 @@ struct boss_arlokkAI : public ScriptedAI
     void Reset() override
     {
         m_uiShadowWordPain_Timer = 8000;
-        m_uiGouge_Timer = 14000;
+        //m_uiGouge_Timer = 14000;
         m_uiMark_Timer = 35000;
         m_uiThrash_Timer = urand(5000, 9000);
         m_uiVanish_Timer = 35000;
@@ -117,7 +117,7 @@ struct boss_arlokkAI : public ScriptedAI
         m_uiTourbillon_Timer = 4000; // Timer incertain
         m_uiRavage_Timer = 15000;
 
-        m_uiSummon_Timer = 10000;
+        m_uiSummon_Timer = 25000;
         m_uiSummonCount = 0;
 
         m_bIsPhaseTwo = false;
@@ -285,10 +285,10 @@ struct boss_arlokkAI : public ScriptedAI
 
                     m_uiGouge_Timer = urand(17000, 27000);
                 }
-            }*/
+            
             else
                 m_uiGouge_Timer -= uiDiff;
-
+            */    
             if (m_uiTourbillon_Timer < uiDiff)
             {
                 if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_TOURBILLON) == CAST_OK)
@@ -303,7 +303,7 @@ struct boss_arlokkAI : public ScriptedAI
             if (m_uiSummon_Timer < uiDiff)
             {
                 DoSummonPhanters();
-                m_uiSummon_Timer = 10000;
+                m_uiSummon_Timer = 25000;
             }
             else
                 m_uiSummon_Timer -= uiDiff;
