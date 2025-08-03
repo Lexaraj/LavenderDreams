@@ -1,5 +1,6 @@
 #include "ZulGurub.h"
 #include "Spells/SpellAuras.h"
+#include "Spells/Spell.h"
 #include "PlayerBots/PartyBotChat.h"
 
 
@@ -98,7 +99,35 @@ bool PartyBotEncounters_ZG::HandleEncounterAI(PartyBotAI* pBot)
 
 bool PartyBotEncounters_ZG::TrashEncounter(PartyBotAI* pBot)
 {
-    // TODO: run away from bat trash
+    Player* pPlayer = pBot->me;
+    if (!pPlayer)
+        return true;
+
+    // Check for nearby enemies
+    std::list<Unit*> enemies;
+    pPlayer->GetEnemyListInRadiusAround(pPlayer, 15.0f, enemies);
+    
+    for (Unit* enemy : enemies)
+    {
+        if (!enemy || !enemy->IsAlive())
+            continue;
+            
+        // Check if this is a Gurubashi Bat Rider
+        if (enemy->GetEntry() == 14750)
+        {
+            // Check if the bat rider is casting
+            if (enemy->IsNonMeleeSpellCasted(false))
+            {
+                // Make the bot run away from the bat rider
+                if (pBot->RunAwayFromTarget(enemy))
+                {
+                    pBot->SendPartyChat("OH FUCK IT'S GONNA BLOW!");
+                    return false;
+                }
+                
+            }
+        }
+    }
 
     return true;
 }
@@ -115,6 +144,7 @@ bool PartyBotEncounters_ZG::JeklikEncounter(PartyBotAI* pBot)
 
 bool PartyBotEncounters_ZG::MarliEncounter(PartyBotAI* pBot)
 {
+    // TODO: make bots hard swap to the spawned spiderlings
     return true;
 }
 
@@ -125,6 +155,7 @@ bool PartyBotEncounters_ZG::ThekalEncounter(PartyBotAI* pBot)
 
 bool PartyBotEncounters_ZG::ArlokkEncounter(PartyBotAI* pBot)
 {
+    // TODO: make bots hard swap to the spawned panthers
     return true;
 }
 

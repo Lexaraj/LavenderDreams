@@ -1,5 +1,6 @@
 #include "ScriptedInstance.h"
 #include "Encounters/MoltenCore.h"
+#include "Encounters/ZulGurub.h"
 
 bool PartyBotEncounters::m_overrideMeleePosition = false;
 bool PartyBotEncounters::m_overrideRangedPosition = false;
@@ -27,6 +28,10 @@ bool PartyBotEncounters::HandleEncounterAI(PartyBotAI* pBot)
         case MAP_ID_MOLTEN_CORE:
         {
             return PartyBotEncounters_MC::HandleEncounterAI(pBot);
+        }
+        case MAP_ID_ZUL_GURUB:
+        {
+            return PartyBotEncounters_ZG::HandleEncounterAI(pBot);
         }
     }
 
