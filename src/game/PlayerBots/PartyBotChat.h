@@ -60,11 +60,20 @@ public:
     void ProcessDirectMessage(ObjectGuid const& senderGuid, std::string const& message, Player* player);
     bool HandleHotMeCommand(Player* player, Player* sender);
     bool HasHealerAnnouncedTank = false;
+    
+    time_t GetLastPartyChatTimestamp(ObjectGuid const& playerGuid) const;
+    void SetLastPartyChatTimestamp(ObjectGuid const& playerGuid, time_t timestamp);
+    void SetPartyBotCooldown(ObjectGuid const& playerGuid, int seconds);
+    int GetPartyBotCooldown(ObjectGuid const& playerGuid) const;
+    void ClearAllCooldowns();
 
 private:
     static PartyBotChat* instance;
     PartyBotChat() {}
     ~PartyBotChat() {}
+    
+    std::map<ObjectGuid, time_t> lastPartyChatTimestamps;
+    std::map<ObjectGuid, time_t> partyBotCooldowns;
 };
 
 #endif // PARTY_BOT_CHAT_H

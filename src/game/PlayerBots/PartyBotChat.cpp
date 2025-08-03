@@ -139,11 +139,17 @@ void PartyBotChat::SendPartyChat(const char* message, Player* player) const
     ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message, LANG_UNIVERSAL, CHAT_TAG_NONE, player->GetObjectGuid(), player->GetName());
     player->GetGroup()->BroadcastPacket(data, false);
     delete data;
+    
+    GetInstance()->SetLastPartyChatTimestamp(player->GetObjectGuid(), time(nullptr));
 }
 
 void PartyBotChat::SendPartyChat(const char* message, Player* player, float delay) const
 {
     if (!player || !player->GetGroup())
+        return;
+
+    // check if the player is on cooldown
+    if (GetPartyBotCooldown(player->GetObjectGuid()) > 0)
         return;
 
     // Schedule this task to execute after delay (milliseconds)
@@ -158,6 +164,8 @@ void PartyBotChat::SendPartyChat(const char* message, Player* player, float dela
                     ChatHandler::BuildChatPacket(*data, CHAT_MSG_PARTY, message.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE, playerPtr->GetObjectGuid(), playerPtr->GetName());
                     group->BroadcastPacket(data, false);
                     delete data;
+                    
+                    GetInstance()->SetLastPartyChatTimestamp(playerPtr->GetObjectGuid(), time(nullptr));
                 }
             }
         };
@@ -214,8 +222,6 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
     size_t guidEnd = senderInfo.find(")");
     uint32 playerGuid = std::stoul(senderInfo.substr(guidStart, guidEnd - guidStart));
 
-    
-
     // Process the message
     std::string msg = message;
     std::transform(msg.begin(), msg.end(), msg.begin(), ::tolower);
@@ -263,10 +269,7 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
                     std::transform(mNameLower.begin(), mNameLower.end(), mNameLower.begin(), ::tolower);
 
                     if (msg.find(mNameLower) != std::string::npos)
-                    {
-                        // i've been spoken to
                         ProcessDirectMessage(senderGuid, message, pMember);
-                    }
                 }
             }
         }
@@ -301,4 +304,53 @@ bool PartyBotChat::HandleHotMeCommand(Player* player, Player* sender)
     // cast a HoT on the sender if I'm a healer
     
     return true;
+}
+
+time_t PartyBotChat::GetLastPartyChatTimestamp(ObjectGuid const& playerGuid) const
+{
+    auto it = lastPartyChatTimestamps.find(playerGuid);
+    if (it != lastPartyChatTimestamps.end())
+    {
+        return it->second;
+    }
+    return 0; // Return 0 if no timestamp found for this player
+}
+
+void PartyBotChat::SetLastPartyChatTimestamp(ObjectGuid const& playerGuid, time_t timestamp)
+{
+    lastPartyChatTimestamps[playerGuid] = timestamp;
+}
+
+void PartyBotChat::SetPartyBotCooldown(ObjectGuid const& playerGuid, int seconds)
+{
+    // Calculate the timestamp when the cooldown expires (current time + seconds)
+    time_t cooldownExpiry = time(nullptr) + seconds;
+    partyBotCooldowns[playerGuid] = cooldownExpiry;
+}
+
+int PartyBotChat::GetPartyBotCooldown(ObjectGuid const& playerGuid) const
+{
+    auto it = partyBotCooldowns.find(playerGuid);
+    if (it != partyBotCooldowns.end())
+    {
+        time_t currentTime = time(nullptr);
+        time_t cooldownExpiry = it->second;
+        
+        // If cooldown has expired, return 0
+        if (currentTime >= cooldownExpiry)
+        {
+            return 0;
+        }
+        
+        // Return remaining seconds
+        return static_cast<int>(cooldownExpiry - currentTime);
+    }
+    
+    // No cooldown set for this player
+    return 0;
+}
+
+void PartyBotChat::ClearAllCooldowns()
+{
+    partyBotCooldowns.clear();
 }

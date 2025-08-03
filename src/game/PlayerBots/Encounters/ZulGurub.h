@@ -35,6 +35,4 @@ public:
     static bool GahzrankaEncounter(PartyBotAI* pBot);
     static bool JindoEncounter(PartyBotAI* pBot);
     static bool TrashEncounter(PartyBotAI* pBot);
-
-    static void ResetEncounterVars();
 };

@@ -51,6 +51,7 @@ public:
     static bool OverrideMeleePosition() { return m_overrideMeleePosition; }
     static bool OverrideRangedPosition() { return m_overrideRangedPosition; }
     static bool OverrideMagicDispel() { return m_overrideMagicDispel; }
+    static void ResetEncounterVars();
 
     static bool HandleEncounterAI(PartyBotAI* pBot);
     static bool IsEncounterInProgress(PartyBotAI* pBot);

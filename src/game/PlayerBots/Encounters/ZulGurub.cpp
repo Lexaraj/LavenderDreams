@@ -4,14 +4,6 @@
 #include "PlayerBots/PartyBotChat.h"
 
 
-
-void PartyBotEncounters_ZG::ResetEncounterVars()
-{
-    m_overrideMeleePosition = false;
-    m_overrideRangedPosition = false;
-    m_overrideMagicDispel = false;
-}
-
 bool PartyBotEncounters_ZG::HandleEncounterAI(PartyBotAI* pBot)
 {
     Player* pPlayer = pBot->me;
@@ -106,7 +98,6 @@ bool PartyBotEncounters_ZG::TrashEncounter(PartyBotAI* pBot)
     // Check for nearby enemies
     std::list<Unit*> enemies;
     pPlayer->GetEnemyListInRadiusAround(pPlayer, 15.0f, enemies);
-    
     for (Unit* enemy : enemies)
     {
         if (!enemy || !enemy->IsAlive())
@@ -115,16 +106,23 @@ bool PartyBotEncounters_ZG::TrashEncounter(PartyBotAI* pBot)
         // Check if this is a Gurubashi Bat Rider
         if (enemy->GetEntry() == 14750)
         {
-            // Check if the bat rider is casting
+            // Run away if the bat rider is casting
             if (enemy->IsNonMeleeSpellCasted(false))
             {
-                // Make the bot run away from the bat rider
                 if (pBot->RunAwayFromTarget(enemy))
                 {
                     pBot->SendPartyChat("OH FUCK IT'S GONNA BLOW!");
+                    pBot->SetChatCooldown(3);
+                    
+                    if (pPlayer->GetVictim() == enemy)
+                    {
+                        Unit* assistTarget = pBot->SelectPartyAttackTarget();
+                        if (assistTarget)
+                            pBot->AttackStart(assistTarget);
+                    }
+
                     return false;
                 }
-                
             }
         }
     }

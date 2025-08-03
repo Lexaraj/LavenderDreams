@@ -136,13 +136,8 @@ public:
     bool m_leaderReleased = false;
     bool m_isBuffing = false;
 
-    void SendPartyChat(const char* msg, uint32 delay = 0)
-    {
-        if (!me || !me->GetGroup())
-            return;
-
-        PartyBotChat::GetInstance()->SendPartyChat(msg, me, delay);
-    }
+    void SendPartyChat(const char* msg, uint32 delay = 0);
+    void SetChatCooldown(uint32 seconds);
 };
 
 #endif

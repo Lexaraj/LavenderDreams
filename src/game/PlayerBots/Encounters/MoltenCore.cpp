@@ -13,9 +13,7 @@ Player* PartyBotEncounters_MC::LivingBombTarget = nullptr;
 
 void PartyBotEncounters_MC::ResetEncounterVars()
 {
-    m_overrideMeleePosition = false;
-    m_overrideRangedPosition = false;
-    m_overrideMagicDispel = false;
+    PartyBotEncounters::ResetEncounterVars();
     AnnouncedLivingBomb = false;
     LivingBombTarget = nullptr;
     LastInsultedTime = 0;
