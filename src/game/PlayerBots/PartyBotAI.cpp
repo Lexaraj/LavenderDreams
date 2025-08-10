@@ -4038,3 +4038,19 @@ bool PartyBotAI::HasEnemiesInRadius(float x, float y, float z, float radius) con
     }
     return false;
 }
+
+void PartyBotAI::SendPartyChat(const char* msg, uint32 delay)
+{
+    if (!me || !me->GetGroup())
+        return;
+
+    PartyBotChat::GetInstance()->SendPartyChat(msg, me, delay);
+}
+
+void PartyBotAI::SetChatCooldown(uint32 seconds)
+{
+    if (!me || !me->GetGroup())
+        return;
+
+    PartyBotChat::GetInstance()->SetPartyBotCooldown(me->GetObjectGuid(), seconds);
+}

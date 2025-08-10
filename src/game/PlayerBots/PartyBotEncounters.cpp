@@ -67,3 +67,11 @@ bool PartyBotEncounters::DispelMagic(PartyBotAI* pCaster, Unit* pTarget)
     
     return false;
 }
+
+void PartyBotEncounters::ResetEncounterVars()
+{
+    m_overrideMeleePosition = false;
+    m_overrideRangedPosition = false;
+    m_overrideMagicDispel = false;
+    PartyBotChat::GetInstance()->ClearAllCooldowns();
+}
