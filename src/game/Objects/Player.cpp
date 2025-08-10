@@ -5391,7 +5391,7 @@ bool Player::UpdateFishingSkill()
     if (GetSession()->HasTrialRestrictions() && skillValue >= MAX_TRIAL_SECONDARY_PROFESSION_SKILL)
         return false;
 
-    int32 chance = skillValue < 75 ? 100 : 2500 / (skillValue - 50);
+    int32 chance = skillValue < 100 ? 100 : 5000 / (skillValue - 50);
     uint32 gatheringSkillGain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
 
     return UpdateSkillPro(SKILL_FISHING, chance * 10, gatheringSkillGain);
