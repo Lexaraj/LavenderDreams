@@ -250,6 +250,42 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
     }
 
 
+    // Who is the pLeader
+    if (msg.find("who's your daddy") != std::string::npos)
+    {
+        if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(sender->AI()))
+        {
+            char message[128];
+            Player* pLeader = ObjectAccessor::FindPlayer(pAI->m_leaderGuid);
+            if (pLeader)
+            {
+                if(pLeader->GetDeathState() == DEAD)
+                {
+                    snprintf(message, sizeof(message), "My daddy, for your fuckin information, is DEAD, asshole. Lol jk, it's %s.", pLeader->GetName());
+                    SendPartyChat(message, sender);
+                    return;
+                }
+                else
+                {
+                    const char* messages[] = {
+                        "%s is my leader and I follow them with unwavering loyalty.",
+                        "I serve %s, they are my absolute lordingheimenschmiggdt.",
+                        "I'm %s's bitch, and I'm proud of it.",
+                    };
+                    const char* selectedMessage = messages[urand(0,2)];
+                    snprintf(message, sizeof(message), selectedMessage, pLeader->GetName());
+                    SendPartyChat(message, sender);
+                }
+            }
+            else
+            {
+                snprintf(message, sizeof(message), "I don't know who my daddy is, %s.", sender->GetName());
+                SendPartyChat(message, sender);
+            }
+        }
+    }
+
+
     // My name
     // Check if message contains bot names
     if (Group* group = sender->GetGroup())
@@ -295,6 +331,27 @@ void PartyBotChat::ProcessDirectMessage(ObjectGuid const& senderGuid, std::strin
             SendPartyChat(message, player);
         }
     }
+    else
+    if (messageLower.find("i'm your daddy") != std::string::npos)
+    {
+        if (HandleFollowMeCommand(player, sender))
+        {
+            char message[128];
+            snprintf(message, sizeof(message), "Oh yeah fuck yeah shit yeah kum yeah, %s.", sender->GetName());
+            SendPartyChat(message, player);
+        }
+    }
+    else
+    if (messageLower.find("cc pull") != std::string::npos)
+    {
+        if (HandleCCPullCommand(player, sender))
+        {
+            char message[128];
+            snprintf(message, sizeof(message), "Pulling!", sender->GetName());
+            SendPartyChat(message, player);
+        }
+    }
+
     
 }
 
@@ -305,6 +362,34 @@ bool PartyBotChat::HandleHotMeCommand(Player* player, Player* sender)
     
     return true;
 }
+
+bool PartyBotChat::HandleFollowMeCommand(Player* player, Player* sender)
+{
+    // make the bot follow the sender
+    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(player->AI()))
+    {
+        pAI->SetOwner(sender);
+    }
+    return true;
+}
+
+
+bool PartyBotChat::HandleCCPullCommand(Player* player, Player* sender)
+{
+    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(player->AI()))
+    {
+        if (pAI->m_marksToCC.empty())
+        {
+            char message[128];
+            snprintf(message, sizeof(message), "I don't have a cc mark, %s.", sender->GetName());
+            SendPartyChat(message, player);
+            return false;
+        }
+        return pAI->CrowdControlMarkedTargets();
+    }
+    return false;
+}
+
 
 time_t PartyBotChat::GetLastPartyChatTimestamp(ObjectGuid const& playerGuid) const
 {

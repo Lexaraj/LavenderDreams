@@ -59,6 +59,8 @@ public:
     void HealerAnnounceTank(const char* msg, Player* player);
     void ProcessDirectMessage(ObjectGuid const& senderGuid, std::string const& message, Player* player);
     bool HandleHotMeCommand(Player* player, Player* sender);
+    bool HandleFollowMeCommand(Player* player, Player* sender);
+    bool HandleCCPullCommand(Player* player, Player* sender);
     bool HasHealerAnnouncedTank = false;
     
     time_t GetLastPartyChatTimestamp(ObjectGuid const& playerGuid) const;
