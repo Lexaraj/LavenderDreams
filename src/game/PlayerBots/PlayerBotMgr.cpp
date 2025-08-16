@@ -1966,6 +1966,44 @@ bool ChatHandler::HandlePartyBotPullCommand(char* args)
     return true;
 }
 
+bool ChatHandler::HandlePartyBotCCPullCommand(char* args)
+{
+    Player* pPlayer = GetSession()->GetPlayer();
+    Group* pGroup = pPlayer->GetGroup();
+    if (!pGroup)
+    {
+        SendSysMessage("You are not in a group.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    bool success = false;
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        if (Player* pMember = itr->getSource())
+        {
+            if (pMember == pPlayer)
+                continue;
+
+            if (pMember->AI())
+            {
+                if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pMember->AI()))
+                {
+                    if (pAI->CrowdControlMarkedTargets())
+                        success = true;
+                }
+            }
+        }
+    }
+
+    if (success)
+        PSendSysMessage("CC pull initiated.");
+    else
+        PSendSysMessage("No party bots with CC marks found.");
+
+    return true;
+}
+
 bool ChatHandler::HandlePartyBotUnequipCommand(char* args)
 {
     Player* pTarget = GetSelectedPlayer();
