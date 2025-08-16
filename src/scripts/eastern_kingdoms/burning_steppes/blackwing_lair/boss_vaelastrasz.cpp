@@ -107,10 +107,10 @@ struct boss_vaelAI : public ScriptedAI
         m_uiSpeechTimer                  = 0;
         m_uiSpeechNum                    = 0;
         m_uiCleaveTimer                  = 6000;
-        m_uiFlameBreathTimer             = 8000;
+        m_uiFlameBreathTimer             = 10000;
         m_uiBurningAdrenalineCasterTimer = 15000;
-        m_uiBurningAdrenalineTankTimer   = 45000;
-        m_uiFireNovaTimer                = 4000;
+        m_uiBurningAdrenalineTankTimer   = 30000;
+        m_uiFireNovaTimer                = 5000;
         m_uiTailSweepTimer               = 8000;
         m_uiSelectableTimer              = 0;
         m_uiIntroTimer                   = 0;
@@ -373,7 +373,7 @@ struct boss_vaelAI : public ScriptedAI
             if (m_creature->GetVictim() && !m_creature->GetVictim()->HasAura(SPELL_BURNING_ADRENALINE) && m_creature->GetVictim()->IsAlive())
             {
                 m_creature->GetVictim()->CastSpell(m_creature->GetVictim(), SPELL_BURNING_ADRENALINE, true);
-                m_uiBurningAdrenalineTankTimer = 45000;
+                m_uiBurningAdrenalineTankTimer = 30000;
             }
         }
         else
@@ -399,7 +399,7 @@ struct boss_vaelAI : public ScriptedAI
         if (m_uiFlameBreathTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_FLAME_BREATH) == CAST_OK)
-                m_uiFlameBreathTimer = urand(5000, 10000);
+                m_uiFlameBreathTimer = urand(10000, 12000);
         }
         else
             m_uiFlameBreathTimer -= uiDiff;
@@ -408,7 +408,7 @@ struct boss_vaelAI : public ScriptedAI
         if (m_uiFireNovaTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_FIRE_NOVA) == CAST_OK)
-                m_uiFireNovaTimer = 2000;
+                m_uiFireNovaTimer = 5000;
         }
         else
             m_uiFireNovaTimer -= uiDiff;

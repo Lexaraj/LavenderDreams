@@ -58,8 +58,8 @@ struct boss_broodlordAI : public ScriptedAI
     void Reset() override
     {
         m_uiCleaveTimer         = 8000; // These times are probably wrong
-        m_uiBlastWaveTimer      = 20000;
-        m_uiMortalStrikeTimer   = 25000;
+        m_uiBlastWaveTimer      = 30000;
+        m_uiMortalStrikeTimer   = 35000;
         m_uiKnockAwayTimer      = urand(20000, 25000);
         m_uiInCombatTimer       = 2000;
     }
@@ -103,7 +103,7 @@ struct boss_broodlordAI : public ScriptedAI
     void SpellHitTarget(Unit* pCaster, SpellEntry const* pSpell) override
     {
         if (pSpell->Id == SPELL_KNOCK_AWAY)
-            m_creature->GetThreatManager().modifyThreatPercent(pCaster, -50);
+            m_creature->GetThreatManager().modifyThreatPercent(pCaster, -10);
     }
 
     void SetMobsDesactivated(bool on)
@@ -170,7 +170,7 @@ struct boss_broodlordAI : public ScriptedAI
         if (m_uiBlastWaveTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_BLAST_WAVE) == CAST_OK)
-                m_uiBlastWaveTimer = urand(20000, 35000);
+                m_uiBlastWaveTimer = urand(30000, 30000);
         }
         else
             m_uiBlastWaveTimer -= uiDiff;
@@ -179,7 +179,7 @@ struct boss_broodlordAI : public ScriptedAI
         if (m_uiMortalStrikeTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_MORTAL_STRIKE) == CAST_OK)
-                m_uiMortalStrikeTimer = urand(20000, 30000);
+                m_uiMortalStrikeTimer = urand(30000, 35000);
         }
         else
             m_uiMortalStrikeTimer -= uiDiff;

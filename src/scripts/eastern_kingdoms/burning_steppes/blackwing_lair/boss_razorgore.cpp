@@ -93,8 +93,8 @@ struct boss_razorgoreAI : public ScriptedAI
     {
         SetCombatMovement(true);
         m_uiCleaveTimer         = 9000; // These times are probably wrong
-        m_uiWarStompTimer       = 22000;
-        m_uiConflagrationTimer  = 12000;
+        m_uiWarStompTimer       = 28000;
+        m_uiConflagrationTimer  = 20000;
         m_uiFireballVolleyTimer = 7000;
         m_uiOutOfReachTimer     = 10000;
         m_uiInitTimer           = 5000;
@@ -328,7 +328,7 @@ struct boss_razorgoreAI : public ScriptedAI
         if (m_uiConflagrationTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_CONFLAGRATION) == CAST_OK)
-                m_uiConflagrationTimer = urand(15000, 25000);
+                m_uiConflagrationTimer = urand(25000, 30000);
         }
         else
             m_uiConflagrationTimer -= uiDiff;
@@ -437,11 +437,11 @@ struct trigger_orb_of_commandAI : public ScriptedAI
         GetCreatureListWithEntryInGrid(lOrc, m_creature, NPC_BLACKWING_LEGGIONAIRE,     250.0f);
         GetCreatureListWithEntryInGrid(lOrc, m_creature, NPC_BLACKWING_MAGE,            250.0f);
 
-        if ((lDrake.size() >= 12) && (lOrc.size() >= 40))
+        if ((lDrake.size() >= 3) && (lOrc.size() >= 10))
             return;
-        else if (lDrake.size() >= 12)
+        else if (lDrake.size() >= 3)
             uiType = urand(1, 2);
-        else if (lOrc.size() >= 40)
+        else if (lOrc.size() >= 10)
             uiType = 3;
         else
             uiType = urand(1, 3);
@@ -604,7 +604,7 @@ struct trigger_orb_of_commandAI : public ScriptedAI
                         pRazorgore->StopMoving();
                     }
 
-                    pRazorgore->SetMaxHealth(225000);
+                    pRazorgore->SetMaxHealth(44969);
 
                     if (Unit* pChanneler = m_creature->GetMap()->GetUnit(m_uiPossesseurGuid))
                     {
@@ -665,7 +665,7 @@ struct trigger_orb_of_commandAI : public ScriptedAI
                 for (uint8 i = 0; i < 4; ++i)
                     PopAdd(i);
 
-                m_uiPopTimer = 15000;
+                m_uiPopTimer = 25000;
             }
             else
                 m_uiPopTimer -= uiDiff;
