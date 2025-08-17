@@ -106,6 +106,8 @@ public:
     void UpdateInCombatAI_Druid() final;
     void UpdateOutOfCombatAI_Druid() final;
 
+    void AutoAssignRole();
+
     bool IsStaying() const { return m_isStaying; }
     void SetStaying(bool staying);
     void RepositionMeleeDps();

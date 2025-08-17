@@ -4054,3 +4054,17 @@ void PartyBotAI::SetChatCooldown(uint32 seconds)
 
     PartyBotChat::GetInstance()->SetPartyBotCooldown(me->GetObjectGuid(), seconds);
 }
+
+void PartyBotAI::AutoAssignRole()
+{
+    CombatBotBaseAI::AutoAssignRole();
+    
+    // Add skull mark to focus list for DPS roles
+    if (m_role == ROLE_MELEE_DPS || m_role == ROLE_RANGE_DPS)
+    {
+        if (std::find(m_marksToFocus.begin(), m_marksToFocus.end(), RAID_TARGET_ICON_SKULL) == m_marksToFocus.end())
+        {
+            m_marksToFocus.push_back(RAID_TARGET_ICON_SKULL);
+        }
+    }
+}

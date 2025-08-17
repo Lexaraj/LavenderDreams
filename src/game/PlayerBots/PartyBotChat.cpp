@@ -253,34 +253,42 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
     // Who is the pLeader
     if (msg.find("who's your daddy") != std::string::npos)
     {
-        if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(sender->AI()))
+        if (Group* group = sender->GetGroup())
         {
-            char message[128];
-            Player* pLeader = ObjectAccessor::FindPlayer(pAI->m_leaderGuid);
-            if (pLeader)
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
             {
-                if(pLeader->GetDeathState() == DEAD)
+                if (Player* pMember = itr->getSource())
                 {
-                    snprintf(message, sizeof(message), "My daddy, for your fuckin information, is DEAD, asshole. Lol jk, it's %s.", pLeader->GetName());
-                    SendPartyChat(message, sender);
-                    return;
+                    if (pMember->GetGUIDLow() == playerGuid)
+                        continue;
+
+                    if(PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pMember->AI()))
+                    {
+                        char message[128];
+                        Player* pLeader = ObjectAccessor::FindPlayer(pAI->m_leaderGuid);
+                        if(pLeader)
+                        {
+
+                            if(pLeader->GetDeathState() == DEAD)
+                            {
+                                snprintf(message, sizeof(message), "My daddy, for your fuckin information, is DEAD, asshole. Lol jk, it's %s.", pLeader->GetName());
+                                SendPartyChat(message, pMember);
+                            }
+                            else
+                            {
+                                const char* messages[] = {
+                                    "%s is my leader and I follow them with unwavering loyalty.",
+                                    "I serve %s, they are my absolute lordingheimenschmiggdt.",
+                                    "I'm %s's bitch, and I'm proud of it.",
+                                    "My daddy is %s."
+                                };
+                                const char* selectedMessage = messages[urand(0,2)];
+                                snprintf(message, sizeof(message), selectedMessage, pLeader->GetName());
+                                SendPartyChat(message, pMember);
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    const char* messages[] = {
-                        "%s is my leader and I follow them with unwavering loyalty.",
-                        "I serve %s, they are my absolute lordingheimenschmiggdt.",
-                        "I'm %s's bitch, and I'm proud of it.",
-                    };
-                    const char* selectedMessage = messages[urand(0,2)];
-                    snprintf(message, sizeof(message), selectedMessage, pLeader->GetName());
-                    SendPartyChat(message, sender);
-                }
-            }
-            else
-            {
-                snprintf(message, sizeof(message), "I don't know who my daddy is, %s.", sender->GetName());
-                SendPartyChat(message, sender);
             }
         }
     }
