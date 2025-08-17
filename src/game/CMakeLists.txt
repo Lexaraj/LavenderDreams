@@ -195,7 +195,8 @@ set (game_SRCS
     PlayerBots/PartyBotChat.cpp
     PlayerBots/PartyBotEncounters.cpp
     PlayerBots/Encounters/MoltenCore.cpp
-    PlayerBots/Encounters/ZulGurub.cpp    
+    PlayerBots/Encounters/ZulGurub.cpp
+    PlayerBots/Encounters/BlackwingLair.cpp    
     PlayerBots/CombatBotBaseAI.cpp
     PlayerBots/BattleBotAI.cpp
     PlayerBots/BattleBotWaypoints.cpp

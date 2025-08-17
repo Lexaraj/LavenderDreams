@@ -1331,6 +1331,16 @@ bool ChatHandler::HandlePartyBotSetRoleCommand(char* args)
             pAI->m_role = role;
             pAI->ResetSpellData();
             pAI->PopulateSpellData();
+            
+            // Add skull mark to DPS bots' focus list by default
+            if (role == ROLE_MELEE_DPS || role == ROLE_RANGE_DPS)
+            {
+                if (std::find(pAI->m_marksToFocus.begin(), pAI->m_marksToFocus.end(), RAID_TARGET_ICON_SKULL) == pAI->m_marksToFocus.end())
+                {
+                    pAI->m_marksToFocus.push_back(RAID_TARGET_ICON_SKULL);
+                }
+            }
+            
             PSendSysMessage("%s is now a %s.", pTarget->GetName(), roleStr.c_str());
             return true;
         }
