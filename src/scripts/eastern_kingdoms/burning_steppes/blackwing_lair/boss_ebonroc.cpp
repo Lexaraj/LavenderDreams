@@ -43,7 +43,7 @@ struct boss_ebonrocAI : public ScriptedAI
     {
         m_uiShadowFlameTimer        = 16000;                // These times are probably wrong
         m_uiWingBuffetTimer         = 30000;
-        m_uiShadowOfEbonrocTimer    = 8000;
+        m_uiShadowOfEbonrocTimer    = 30000;
     }
 
     void Aggro(Unit* /*pWho*/) override
@@ -73,7 +73,7 @@ struct boss_ebonrocAI : public ScriptedAI
             if (!pCaster || pCaster->GetTypeId() != TYPEID_PLAYER)
                 return;
             if (m_creature->GetThreatManager().getThreat(pCaster))
-                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -50);
+                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -10);
         }
     }
 
@@ -104,7 +104,7 @@ struct boss_ebonrocAI : public ScriptedAI
         if (m_uiShadowOfEbonrocTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_SHADOW_OF_EBONROC, CF_AURA_NOT_PRESENT) == CAST_OK)
-                m_uiShadowOfEbonrocTimer = 8000;
+                m_uiShadowOfEbonrocTimer = 30000;
         }
         else
             m_uiShadowOfEbonrocTimer -= uiDiff;

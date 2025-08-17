@@ -45,7 +45,7 @@ struct boss_flamegorAI : public ScriptedAI
     {
         m_uiShadowFlameTimer = 16000; // These times are probably wrong
         m_uiWingBuffetTimer  = 30000;
-        m_uiFrenzyTimer      = 10000;
+        m_uiFrenzyTimer      = 15000;
     }
 
     void Aggro(Unit* /*pWho*/) override
@@ -75,7 +75,7 @@ struct boss_flamegorAI : public ScriptedAI
             if (!pCaster || pCaster->GetTypeId() != TYPEID_PLAYER)
                 return;
             if (m_creature->GetThreatManager().getThreat(pCaster))
-                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -50);
+                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -10);
         }
     }
 
@@ -108,7 +108,7 @@ struct boss_flamegorAI : public ScriptedAI
             if (DoCastSpellIfCan(m_creature, SPELL_FRENZY) == CAST_OK)
             {
                 DoScriptText(EMOTE_GENERIC_FRENZY, m_creature);
-                m_uiFrenzyTimer = 10000;
+                m_uiFrenzyTimer = 15000;
             }
         }
         else

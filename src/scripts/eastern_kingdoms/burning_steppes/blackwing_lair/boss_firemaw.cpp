@@ -43,7 +43,7 @@ struct boss_firemawAI : public ScriptedAI
     {
         m_uiShadowFlameTimer = 16000;
         m_uiWingBuffetTimer  = 30000;
-        m_uiFlameBuffetTimer = 2000;
+        m_uiFlameBuffetTimer = 8000;
     }
 
     void Aggro(Unit* /*pWho*/) override
@@ -73,7 +73,7 @@ struct boss_firemawAI : public ScriptedAI
             if (!pCaster || pCaster->GetTypeId() != TYPEID_PLAYER)
                 return;
             if (m_creature->GetThreatManager().getThreat(pCaster))
-                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -50);
+                m_creature->GetThreatManager().modifyThreatPercent(pCaster, -10);
         }
     }
 
@@ -104,7 +104,7 @@ struct boss_firemawAI : public ScriptedAI
         if (m_uiFlameBuffetTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_FLAME_BUFFET) == CAST_OK)
-                m_uiFlameBuffetTimer = urand(1800, 3000);
+                m_uiFlameBuffetTimer = urand(6000, 10000);
         }
         else
             m_uiFlameBuffetTimer -= uiDiff;

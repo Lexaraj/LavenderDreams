@@ -359,7 +359,7 @@ struct trigger_orb_of_commandAI : public ScriptedAI
 
     void Reset() override
     {
-        m_uiPopTimer       = 45000; // Timer confirmed by BigWigs
+        m_uiPopTimer       = 35000; // Timer confirmed by BigWigs
         m_uiRazorgorePhase = true;
         m_uiCombatStarted  = false;
         m_uiPossesseurGuid.Clear();
@@ -665,7 +665,7 @@ struct trigger_orb_of_commandAI : public ScriptedAI
                 for (uint8 i = 0; i < 4; ++i)
                     PopAdd(i);
 
-                m_uiPopTimer = 25000;
+                m_uiPopTimer = 30000;
             }
             else
                 m_uiPopTimer -= uiDiff;

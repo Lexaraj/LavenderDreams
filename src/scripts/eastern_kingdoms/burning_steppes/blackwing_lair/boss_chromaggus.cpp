@@ -121,7 +121,7 @@ struct boss_chromaggusAI : public ScriptedAI
         m_uiBreathOneTimer  = 30000;    // First breath happens in 30 secs. Repeats every 60 secs.
         m_uiBreathTwoTimer  = 60000;    // Second breath happens in 60 secs. Repeats every 60 secs.
         m_uiAfflictionTimer = 7500;     // Afflictions are applied every 7.5 secs.
-        m_uiFrenzyTimer     = 15000;    // Frenzy happens every 15 secs.
+        m_uiFrenzyTimer     = 25000;    // Frenzy happens every 25 secs.
 
         m_bEnraged          = false;
         m_lRedAfflictionPlayerGUID.clear();
