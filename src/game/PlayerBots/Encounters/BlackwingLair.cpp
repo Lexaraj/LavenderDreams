@@ -99,10 +99,11 @@ bool PartyBotEncounters_BWL::RazorgoreEncounter(PartyBotAI* pBot)
     ScriptedInstance* pInstance = (ScriptedInstance*)pPlayer->GetInstanceData();
     if (!pInstance)
         return true;
-
-    uint32 eggsDestroyed = pInstance->GetData(RAZORGORE_EGGS_DESTROYED);
     
-    if (eggsDestroyed >= 15)
+    if (pInstance->GetData(RAZORGORE_EGGS_DESTROYED) >= 15)
+        return true;
+
+    if (Unit* pTarget = pPlayer->GetVictim())
         return true;
 
     // Define focus mobs within 100 yards
@@ -138,7 +139,7 @@ bool PartyBotEncounters_BWL::RazorgoreEncounter(PartyBotAI* pBot)
                                  memberTarget->IsAlive() &&
                                  pPlayer->GetVictim() != memberTarget)
                             {
-                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
+                                pPlayer->Attack(memberTarget, pBot->GetRole() == ROLE_MELEE_DPS);
                                 assist = true;
                                 break;
                             }
@@ -161,7 +162,7 @@ bool PartyBotEncounters_BWL::RazorgoreEncounter(PartyBotAI* pBot)
                 if (target && pPlayer->GetVictim() != target)
                 {
                     pBot->SendPartyChat(("Focusing on " + std::string(target->GetName()) + "!").c_str());
-                    pPlayer->SetTargetGuid(target->GetObjectGuid());
+                    pPlayer->Attack(target, pBot->GetRole() == ROLE_MELEE_DPS);
                 }
             }
         }
