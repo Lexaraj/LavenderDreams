@@ -86,6 +86,38 @@ bool PartyBotEncounters_BWL::HandleEncounterAI(PartyBotAI* pBot)
 
 bool PartyBotEncounters_BWL::TrashEncounter(PartyBotAI* pBot)
 {
+    Player* pPlayer = pBot->me;
+    if (!pPlayer)
+        return true;
+    
+    // Search for broodlord trash within 40 yards
+    std::list<Creature*> broodlordTrash;
+    pPlayer->GetCreatureListWithEntryInGrid(broodlordTrash, DEATH_TALON_HATCHER, 40.0f);
+    pPlayer->GetCreatureListWithEntryInGrid(broodlordTrash, CORRUPTED_GREEN_WHELP, 40.0f);
+    pPlayer->GetCreatureListWithEntryInGrid(broodlordTrash, CORRUPTED_RED_WHELP, 40.0f);
+    pPlayer->GetCreatureListWithEntryInGrid(broodlordTrash, CORRUPTED_BLUE_WHELP, 40.0f);
+    pPlayer->GetCreatureListWithEntryInGrid(broodlordTrash, CORRUPTED_BRONZE_WHELP, 40.0f);
+    broodlordTrash.remove_if([](Creature* creature) { return !creature || !creature->IsAlive(); });
+    if (!broodlordTrash.empty())
+    {
+        // Ranged DPS and healer bots should stack on owner
+        if (pBot->GetRole() == ROLE_RANGE_DPS || pBot->GetRole() == ROLE_HEALER)
+        {
+            Player* pOwner = ObjectAccessor::FindPlayer(pBot->m_leaderGuid);
+            if (pOwner && pOwner->IsAlive() && pPlayer->GetDistance(pOwner) > 5.0f)
+            {
+                pPlayer->StopMoving();
+                pPlayer->GetMotionMaster()->Clear(false, true);
+                pPlayer->GetMotionMaster()->MoveFollow(pOwner, 3.0f, 0.0f);
+                pPlayer->SetCasterChaseDistance(5.0f);
+                m_overrideRangedPosition = true;
+                return false;
+            }
+        }
+    } else {
+        m_overrideRangedPosition = false;
+    }
+
     return true;
 }
 

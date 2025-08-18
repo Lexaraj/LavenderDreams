@@ -1947,8 +1947,10 @@ void PartyBotAI::UpdateInCombatAI_Mage()
                     if (DoCastSpell(me, m_spells.mage.pBlink) == SPELL_CAST_OK)
                         return;
                 }
+            
 
-                if (!me->HasUnitState(UNIT_STATE_CAN_NOT_MOVE))
+        if (!me->HasUnitState(UNIT_STATE_CAN_NOT_MOVE) &&
+            !PartyBotEncounters::OverrideRangedPosition())
         {
             if (m_spells.mage.pFrostNova &&
                 !pVictim->HasUnitState(UNIT_STATE_ROOT) &&
@@ -3611,7 +3613,7 @@ void PartyBotAI::UpdateInCombatAI_Druid()
             if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE &&
                 me->GetDistance(pVictim) > 35.0f)
             {
-                if (!m_isStaying)
+                if (!m_isStaying && !PartyBotEncounters::OverrideRangedPosition())
                 {
                     me->GetMotionMaster()->MoveChase(pVictim, 30.0f);
                 }
@@ -3619,7 +3621,8 @@ void PartyBotAI::UpdateInCombatAI_Druid()
             else if (pVictim->CanReachWithMeleeAutoAttack(me) &&
                     (pVictim->GetVictim() == me) &&
                     !me->HasUnitState(UNIT_STATE_ROOT) &&
-                    (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != DISTANCING_MOTION_TYPE))
+                    (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != DISTANCING_MOTION_TYPE) &&
+                    !PartyBotEncounters::OverrideRangedPosition())
             {
                 if (m_spells.druid.pEntanglingRoots &&
                     CanTryToCastSpell(pVictim, m_spells.druid.pEntanglingRoots))
