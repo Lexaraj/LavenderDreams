@@ -8,6 +8,14 @@
 #define BLACKWING_MAGE 12420
 #define BLACKWING_LEGIONNAIRE 12416
 
+// Broodlord trash
+#define DEATH_TALON_HATCHER 12468
+#define CORRUPTED_GREEN_WHELP  14023
+#define CORRUPTED_RED_WHELP    14022
+#define CORRUPTED_BLUE_WHELP   14024
+#define CORRUPTED_BRONZE_WHELP 14025
+
+
 enum BWL_EncounterIds
 {
     TYPE_RAZORGORE = 0,
@@ -20,8 +28,6 @@ enum BWL_EncounterIds
     TYPE_NEFARIAN = 7
 };
 
-
-    
 class PartyBotEncounters_BWL : public PartyBotEncounters
 {
 public:
