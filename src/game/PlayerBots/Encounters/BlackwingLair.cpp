@@ -206,6 +206,24 @@ bool PartyBotEncounters_BWL::RazorgoreEncounter(PartyBotAI* pBot)
 
 bool PartyBotEncounters_BWL::VaelastraszEncounter(PartyBotAI* pBot)
 {
+    Player* pPlayer = pBot->me;
+    if (!pPlayer)
+        return true;
+
+    if (pPlayer->GetClass() != CLASS_PRIEST)
+        return true;
+
+    if (!pPlayer->HasAura(SPELL_BURNING_ADRENALINE) && !pPlayer->HasAura(SPELL_BURNING_ADRENALINE_TANK))
+        return true;
+
+    // spam prayer of healing when burning adrenaline is active
+    if (pBot->m_spells.priest.pPrayerofHealing &&
+         pBot->CanTryToCastSpell(pPlayer, pBot->m_spells.priest.pPrayerofHealing))
+    {
+        pBot->DoCastSpell(pPlayer, pBot->m_spells.priest.pPrayerofHealing);
+        return false;
+    }
+
     return true;
 }
 

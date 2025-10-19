@@ -832,6 +832,11 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.priest.pDivineSpirit))
                         m_spells.priest.pDivineSpirit = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Prayer of Healing") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(m_spells.priest.pPrayerofHealing))
+                        m_spells.priest.pPrayerofHealing = pSpellEntry;
+                }
                 else if (pSpellEntry->SpellName[0].find("Prayer of Spirit") != std::string::npos)
                 {
                     if (IsHigherRankSpell(m_spells.priest.pPrayerofSpirit))
