@@ -280,7 +280,7 @@ public:
                 else if (minor_wave_Timer < diff)
                 {
                     SendAddsUpStairs(addGroupSize++);
-                    minor_wave_Timer = 10000;
+                    minor_wave_Timer = 20000;
                 }
                 else
                     minor_wave_Timer -= diff;
@@ -302,12 +302,12 @@ public:
                 {
                     SpawnPyramidWave(3);
                     SetData(EVENT_PYRAMID, PYRAMID_PRE_WAVE_3);
-                    major_wave_Timer = 5000; //give NPCs time to return to their home spots
+                    major_wave_Timer = 10000; //give NPCs time to return to their home spots
                 }
                 else if (minor_wave_Timer < diff)
                 {
                     SendAddsUpStairs(addGroupSize++);
-                    minor_wave_Timer = 10000;
+                    minor_wave_Timer = 20000;
                 }
                 else
                     minor_wave_Timer -= diff;

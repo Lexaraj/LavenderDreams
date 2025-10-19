@@ -520,7 +520,7 @@ struct boss_onyxiaAI : public ScriptedAI
             DoScriptText(EMOTE_BREATH, m_creature);
 
             m_bDeepBreathIsCasting = true;
-            m_uiDeepBreathTimer = 5000;
+            m_uiDeepBreathTimer = 7000;
             m_creature->CastSpell(m_creature, m_pPointData->uiSpellId, true);
             // face destination and clear target
             m_pPointData = GetMoveData();

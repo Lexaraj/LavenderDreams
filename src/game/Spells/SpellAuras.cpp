@@ -6951,11 +6951,11 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Uni
     //  Exception spells for targetsecondaryfocus:
     switch (m_spellProto->Id)
     {
-        case 23310:                                         // Chromaggus Time Lapse
+        /*case 23310:                                         // Chromaggus Time Lapse
         case 23312:                                         // Chromaggus Time Lapse
             m_makesTargetSecondaryFocus = true;
             break;
-        
+        */
     }
 
     if (m_auraScript)

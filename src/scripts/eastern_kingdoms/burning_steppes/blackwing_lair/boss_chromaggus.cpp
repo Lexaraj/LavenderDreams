@@ -120,8 +120,8 @@ struct boss_chromaggusAI : public ScriptedAI
         m_uiShimmerTimer    = 0;        // Vulnurability is applied at pull. Changes every 20 secs.
         m_uiBreathOneTimer  = 30000;    // First breath happens in 30 secs. Repeats every 60 secs.
         m_uiBreathTwoTimer  = 60000;    // Second breath happens in 60 secs. Repeats every 60 secs.
-        m_uiAfflictionTimer = 7500;     // Afflictions are applied every 7.5 secs.
-        m_uiFrenzyTimer     = 25000;    // Frenzy happens every 25 secs.
+        m_uiAfflictionTimer = 20000;     // Afflictions are applied every 20 secs.
+        m_uiFrenzyTimer     = 40000;    // Frenzy happens every 25 secs.
 
         m_bEnraged          = false;
         m_lRedAfflictionPlayerGUID.clear();
@@ -302,7 +302,7 @@ struct boss_chromaggusAI : public ScriptedAI
                 m_lRedAfflictionPlayerGUID.clear();
             }
 
-            for (uint32 i = 0; i < urand(11, 15); ++i) // Affliction is applied 11-15 times per cast. Creatures such as pets can be targetted
+            for (uint32 i = 0; i < urand(3, 5); ++i) // Affliction is applied 11-15 times per cast. Creatures such as pets can be targetted
             {
                 if (Unit* afflictionTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
                 {
@@ -341,7 +341,7 @@ struct boss_chromaggusAI : public ScriptedAI
                     }
                 }
             }
-            m_uiAfflictionTimer = 7500;
+            m_uiAfflictionTimer = 20000;
         }
         else
             m_uiAfflictionTimer -= uiDiff;
@@ -387,14 +387,14 @@ struct boss_chromaggusAI : public ScriptedAI
             if (DoCastSpellIfCan(m_creature, SPELL_FRENZY) == CAST_OK)
             {
                 DoScriptText(EMOTE_GENERIC_FRENZY_KILL, m_creature);
-                m_uiFrenzyTimer = 15000;
+                m_uiFrenzyTimer = 40000;
             }
         }
         else
             m_uiFrenzyTimer -= uiDiff;
 
-        // Enrage if not already enraged and below 20%
-        if (!m_bEnraged && m_creature->GetHealthPercent() < 20.0f)
+        // Enrage if not already enraged and below 10%
+        if (!m_bEnraged && m_creature->GetHealthPercent() < 10.0f)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_ENRAGE) == CAST_OK)
                 m_bEnraged = true;

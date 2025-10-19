@@ -1028,7 +1028,7 @@ GameObjectAI* GetAIgo_egg_raz(GameObject* pGo)
 
 struct go_engin_suppressionAI: public GameObjectAI
 {
-    go_engin_suppressionAI(GameObject* pGo) : GameObjectAI(pGo), m_uiCheckTimer(urand(6000, 12000)), m_bActive(true) {}
+    go_engin_suppressionAI(GameObject* pGo) : GameObjectAI(pGo), m_uiCheckTimer(urand(8000, 12000)), m_bActive(true) {}
 
     uint32 m_uiCheckTimer;
     bool m_bActive;
@@ -1039,7 +1039,7 @@ struct go_engin_suppressionAI: public GameObjectAI
         {
             me->SetGoState(GO_STATE_ACTIVE);
             m_bActive = false;
-            m_uiCheckTimer = urand(4000, 6000);
+            m_uiCheckTimer = urand(8000, 12000);
             return true;
         }
         else
@@ -1053,7 +1053,7 @@ struct go_engin_suppressionAI: public GameObjectAI
 
         for (const auto& i : liste)
         {
-            if (me->GetDistance(i.getSource()) <= 15.0f)
+            if (me->GetDistance(i.getSource()) <= 13.0f)
                 if (!i.getSource()->HasStealthAura() && i.getSource()->IsAlive() && !i.getSource()->IsGameMaster())
                     i.getSource()->AddAura(SPELL_SUPPRESSION_AURA);
         }
