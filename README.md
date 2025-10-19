@@ -6,8 +6,3 @@ This project is direct, and maintained, fork of the vmangos project with all con
 - Rebalance all Class Specs to be fully viable while maintaining unique identity.
 - Balance professions so no professions feel 'required' for any class or situation. Aiming to make professions feel more collaborative rather than primarily independant choices.
 - Stay in line with the 'spirit' of Vanilla design. This is obviously a very subjective idea and, wildly open to interperation, but the goal is to make meaningful changes without re-walking the path that led to Retail WoW.
-
-### Links
-- [Detailed Server Changes](https://docs.google.com/document/d/1Kj67yrfCh_PfpEumpkWhvfVkpA1yI5uueoFa317pq4s/edit?usp=sharing) (Work in progress)
-- [Talent Calculator](https://lexaraj.github.io/)
-
