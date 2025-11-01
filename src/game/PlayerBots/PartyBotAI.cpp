@@ -197,6 +197,17 @@ bool PartyBotAI::DrinkAndEat()
     if (me->GetVictim())
         return false;
 
+    // Healers should not start drinking if there are dead allies to resurrect
+    if (GetRole() == ROLE_HEALER && m_resurrectionSpell && !IsInDuel())
+    {
+        if (Player* pTarget = SelectResurrectionTarget())
+        {
+            // Only skip drinking if we can cast resurrection (have enough mana)
+            if (CanTryToCastSpell(pTarget, m_resurrectionSpell))
+                return false;
+        }
+    }
+
     bool const needToEat = me->GetHealthPercent() < 95.0f;
     bool const needToDrink = (me->GetPowerType() == POWER_MANA) && (me->GetPowerPercent(POWER_MANA) < 95.0f);
 
@@ -900,6 +911,29 @@ void PartyBotAI::UpdateAI(uint32 const diff)
 
     if (!me->IsInCombat())
     {
+        // Healers should prioritize resurrection over drinking
+        if (GetRole() == ROLE_HEALER && m_resurrectionSpell && !IsInDuel())
+        {
+            if (Player* pTarget = SelectResurrectionTarget())
+            {
+                if (CanTryToCastSpell(pTarget, m_resurrectionSpell))
+                {
+                    // Stop drinking/eating to cast resurrection
+                    if (me->HasAura(PB_SPELL_DRINK))
+                        me->RemoveAurasDueToSpell(PB_SPELL_DRINK);
+                    if (me->HasAura(PB_SPELL_FOOD))
+                        me->RemoveAurasDueToSpell(PB_SPELL_FOOD);
+                    
+                    // Stand up if sitting
+                    if (me->GetStandState() != UNIT_STAND_STATE_STAND)
+                        me->SetStandState(UNIT_STAND_STATE_STAND);
+                    
+                    if (DoCastSpell(pTarget, m_resurrectionSpell) == SPELL_CAST_OK)
+                        return;
+                }
+            }
+        }
+
         if (DrinkAndEat())
         {
             if (!me->IsWithinDistInMap(pLeader, 100.0f))
