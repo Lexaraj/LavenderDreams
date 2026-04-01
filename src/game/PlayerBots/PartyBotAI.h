@@ -73,6 +73,11 @@ public:
     Unit* SelectPartyAttackTarget() const;
     Player* SelectResurrectionTarget() const;
     Player* SelectShieldTarget() const;
+    bool NeedsToDispelAlly() const;
+    bool TryDispelAlly();
+    bool NeedsToBuffAlly() const;
+    bool TryBuffAlly();
+    uint32 CountPlayersNeedingBuff(SpellEntry const* pSpellEntry) const;
     Unit* GetMarkedTarget(RaidTargetIcon mark) const;
     bool CanUseCrowdControl(SpellEntry const* pSpellEntry, Unit* pTarget) const;
     bool DrinkAndEat();

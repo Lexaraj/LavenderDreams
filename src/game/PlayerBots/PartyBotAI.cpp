@@ -197,6 +197,25 @@ bool PartyBotAI::DrinkAndEat()
     if (me->GetVictim())
         return false;
 
+    // Healers should not start drinking if there are dead allies to resurrect
+    if (GetRole() == ROLE_HEALER && m_resurrectionSpell && !IsInDuel())
+    {
+        if (Player* pTarget = SelectResurrectionTarget())
+        {
+            // Only skip drinking if we can cast resurrection (have enough mana)
+            if (CanTryToCastSpell(pTarget, m_resurrectionSpell))
+                return false;
+        }
+    }
+
+    // All bots should not start drinking if there are allies to dispel
+    if (NeedsToDispelAlly())
+        return false;
+
+    // All bots should not start drinking if there are allies to buff
+    if (NeedsToBuffAlly())
+        return false;
+
     bool const needToEat = me->GetHealthPercent() < 95.0f;
     bool const needToDrink = (me->GetPowerType() == POWER_MANA) && (me->GetPowerPercent(POWER_MANA) < 95.0f);
 
@@ -539,6 +558,588 @@ Player* PartyBotAI::SelectResurrectionTarget() const
     }
 
     return nullptr;
+}
+
+bool PartyBotAI::NeedsToDispelAlly() const
+{
+    if (IsInDuel())
+        return false;
+
+    // Check if bot has any dispel spell available
+    SpellEntry const* pDispelSpell = nullptr;
+    
+    switch (me->GetClass())
+    {
+        case CLASS_PALADIN:
+            pDispelSpell = m_spells.paladin.pCleanse;
+            break;
+        case CLASS_SHAMAN:
+            // Shaman has multiple dispels, check them in priority order
+            if (m_spells.shaman.pCureDisease)
+                if (SelectDispelTarget(m_spells.shaman.pCureDisease))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.shaman.pCureDisease), m_spells.shaman.pCureDisease))
+                        return true;
+            if (m_spells.shaman.pCurePoison)
+                if (SelectDispelTarget(m_spells.shaman.pCurePoison))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.shaman.pCurePoison), m_spells.shaman.pCurePoison))
+                        return true;
+            return false;
+        case CLASS_MAGE:
+            pDispelSpell = m_spells.mage.pRemoveLesserCurse;
+            break;
+        case CLASS_PRIEST:
+            // Priest has multiple dispels, check them in priority order
+            if (m_spells.priest.pDispelMagic && !PartyBotEncounters::OverrideMagicDispel())
+                if (SelectDispelTarget(m_spells.priest.pDispelMagic))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.priest.pDispelMagic), m_spells.priest.pDispelMagic))
+                        return true;
+            if (m_spells.priest.pAbolishDisease)
+                if (SelectDispelTarget(m_spells.priest.pAbolishDisease))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.priest.pAbolishDisease), m_spells.priest.pAbolishDisease))
+                        return true;
+            return false;
+        case CLASS_DRUID:
+            // Druid has multiple dispels, check them in priority order
+            if (m_spells.druid.pAbolishPoison)
+                if (SelectDispelTarget(m_spells.druid.pAbolishPoison))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.druid.pAbolishPoison), m_spells.druid.pAbolishPoison))
+                        return true;
+            if (m_spells.druid.pRemoveCurse)
+                if (SelectDispelTarget(m_spells.druid.pRemoveCurse))
+                    if (CanTryToCastSpell(SelectDispelTarget(m_spells.druid.pRemoveCurse), m_spells.druid.pRemoveCurse))
+                        return true;
+            return false;
+        default:
+            return false;
+    }
+
+    // For classes with a single dispel spell
+    if (pDispelSpell)
+    {
+        if (Player* pTarget = SelectDispelTarget(pDispelSpell))
+        {
+            if (CanTryToCastSpell(pTarget, pDispelSpell))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+bool PartyBotAI::TryDispelAlly()
+{
+    if (IsInDuel())
+        return false;
+
+    // Try each class's dispel spells
+    switch (me->GetClass())
+    {
+        case CLASS_PALADIN:
+            if (m_spells.paladin.pCleanse)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.paladin.pCleanse))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pCleanse))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.paladin.pCleanse) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            break;
+        case CLASS_SHAMAN:
+            if (m_spells.shaman.pCureDisease)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.shaman.pCureDisease))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.shaman.pCureDisease))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.shaman.pCureDisease) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            if (m_spells.shaman.pCurePoison)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.shaman.pCurePoison))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.shaman.pCurePoison))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.shaman.pCurePoison) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            break;
+        case CLASS_MAGE:
+            if (m_spells.mage.pRemoveLesserCurse)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.mage.pRemoveLesserCurse))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.mage.pRemoveLesserCurse))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.mage.pRemoveLesserCurse) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            break;
+        case CLASS_PRIEST:
+            if (m_spells.priest.pDispelMagic && !PartyBotEncounters::OverrideMagicDispel())
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.priest.pDispelMagic))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pDispelMagic))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pDispelMagic) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            if (m_spells.priest.pAbolishDisease)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.priest.pAbolishDisease))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pAbolishDisease))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pAbolishDisease) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            break;
+        case CLASS_DRUID:
+            if (m_spells.druid.pAbolishPoison)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.druid.pAbolishPoison))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pAbolishPoison))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pAbolishPoison) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            if (m_spells.druid.pRemoveCurse)
+            {
+                if (Player* pTarget = SelectDispelTarget(m_spells.druid.pRemoveCurse))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pRemoveCurse))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pRemoveCurse) == SPELL_CAST_OK)
+                            return true;
+                    }
+                }
+            }
+            break;
+    }
+
+    return false;
+}
+
+uint32 PartyBotAI::CountPlayersNeedingBuff(SpellEntry const* pSpellEntry) const
+{
+    if (!pSpellEntry)
+        return 0;
+
+    uint32 count = 0;
+    Group* pGroup = me->GetGroup();
+    if (pGroup)
+    {
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (me->IsValidHelpfulTarget(pMember) &&
+                   !pMember->IsGameMaster() &&
+                    IsValidBuffTarget(pMember, pSpellEntry) &&
+                    me->IsWithinLOSInMap(pMember) &&
+                    me->IsWithinDist(pMember, 30.0f))
+                {
+                    count++;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+bool PartyBotAI::NeedsToBuffAlly() const
+{
+    if (IsInDuel())
+        return false;
+
+    // Check if bot has any buff spells that are needed
+    switch (me->GetClass())
+    {
+        case CLASS_PALADIN:
+            if (m_spells.paladin.pBlessingBuff)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                        return true;
+                }
+            }
+            break;
+        case CLASS_MAGE:
+            if (m_spells.mage.pArcaneIntellect)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.mage.pArcaneIntellect))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.mage.pArcaneIntellect))
+                        return true;
+                }
+            }
+            break;
+        case CLASS_PRIEST:
+            // Check Fortitude buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pPowerWordFortitude)
+            {
+                uint32 fortitudeCount = CountPlayersNeedingBuff(m_spells.priest.pPowerWordFortitude);
+                if (fortitudeCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                                return true;
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPowerWordFortitude))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+                            return true;
+                    }
+                }
+            }
+            // Check Spirit buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pDivineSpirit)
+            {
+                uint32 spiritCount = CountPlayersNeedingBuff(m_spells.priest.pDivineSpirit);
+                if (spiritCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofSpirit))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                                return true;
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pDivineSpirit))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
+                            return true;
+                    }
+                }
+            }
+            // Check Shadow Protection buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pShadowProtection)
+            {
+                uint32 shadowProtCount = CountPlayersNeedingBuff(m_spells.priest.pShadowProtection);
+                if (shadowProtCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                                return true;
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+                            return true;
+                    }
+                }
+            }
+            break;
+        case CLASS_WARLOCK:
+            if (m_spells.warlock.pDetectInvisibility)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.warlock.pDetectInvisibility))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.warlock.pDetectInvisibility))
+                        return true;
+                }
+            }
+            break;
+        case CLASS_DRUID:
+            // Check Mark of the Wild buffs (prefer single target if only 1 player needs it)
+            if (m_spells.druid.pMarkoftheWild)
+            {
+                uint32 motWCount = CountPlayersNeedingBuff(m_spells.druid.pMarkoftheWild);
+                if (motWCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pGiftoftheWild))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                                return true;
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.druid.pMarkoftheWild))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+                            return true;
+                    }
+                }
+            }
+            if (m_spells.druid.pThorns)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.druid.pThorns))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pThorns))
+                        return true;
+                }
+            }
+            break;
+    }
+
+    return false;
+}
+
+bool PartyBotAI::TryBuffAlly()
+{
+    if (IsInDuel())
+        return false;
+
+    // Try each class's buff spells
+    switch (me->GetClass())
+    {
+        case CLASS_PALADIN:
+            if (m_spells.paladin.pBlessingBuff)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.paladin.pBlessingBuff) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return true;
+                        }
+                    }
+                }
+            }
+            break;
+        case CLASS_MAGE:
+            if (m_spells.mage.pArcaneIntellect)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.mage.pArcaneIntellect))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.mage.pArcaneIntellect))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.mage.pArcaneIntellect) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return true;
+                        }
+                    }
+                }
+            }
+            break;
+        case CLASS_PRIEST:
+            // Check Fortitude buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pPowerWordFortitude)
+            {
+                uint32 fortitudeCount = CountPlayersNeedingBuff(m_spells.priest.pPowerWordFortitude);
+                if (fortitudeCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPowerWordFortitude))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+                        {
+                            if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
+                            {
+                                m_isBuffing = true;
+                                me->ClearTarget();
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            // Check Spirit buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pDivineSpirit)
+            {
+                uint32 spiritCount = CountPlayersNeedingBuff(m_spells.priest.pDivineSpirit);
+                if (spiritCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofSpirit))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pDivineSpirit))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
+                        {
+                            if (DoCastSpell(pTarget, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
+                            {
+                                m_isBuffing = true;
+                                me->ClearTarget();
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            // Check Shadow Protection buffs (prefer single target if only 1 player needs it)
+            if (m_spells.priest.pShadowProtection)
+            {
+                uint32 shadowProtCount = CountPlayersNeedingBuff(m_spells.priest.pShadowProtection);
+                if (shadowProtCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+                        {
+                            if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
+                            {
+                                m_isBuffing = true;
+                                me->ClearTarget();
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        case CLASS_WARLOCK:
+            if (m_spells.warlock.pDetectInvisibility)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.warlock.pDetectInvisibility))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.warlock.pDetectInvisibility))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.warlock.pDetectInvisibility) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return true;
+                        }
+                    }
+                }
+            }
+            break;
+        case CLASS_DRUID:
+            // Check Mark of the Wild buffs (prefer single target if only 1 player needs it)
+            if (m_spells.druid.pMarkoftheWild)
+            {
+                uint32 motWCount = CountPlayersNeedingBuff(m_spells.druid.pMarkoftheWild);
+                if (motWCount > 0)
+                {
+                    // Use group buff if 2+ players need it and we have it
+                    if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
+                    {
+                        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pGiftoftheWild))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.druid.pGiftoftheWild) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    // Use single target if only 1 player needs it or no group buff
+                    if (Player* pTarget = SelectBuffTarget(m_spells.druid.pMarkoftheWild))
+                    {
+                        if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+                        {
+                            if (DoCastSpell(pTarget, m_spells.druid.pMarkoftheWild) == SPELL_CAST_OK)
+                            {
+                                m_isBuffing = true;
+                                me->ClearTarget();
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            if (m_spells.druid.pThorns)
+            {
+                if (Player* pTarget = SelectBuffTarget(m_spells.druid.pThorns))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pThorns))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pThorns) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return true;
+                        }
+                    }
+                }
+            }
+            break;
+    }
+
+    return false;
 }
 
 Player* PartyBotAI::SelectShieldTarget() const
@@ -900,6 +1501,63 @@ void PartyBotAI::UpdateAI(uint32 const diff)
 
     if (!me->IsInCombat())
     {
+        // Healers should prioritize resurrection over drinking
+        if (GetRole() == ROLE_HEALER && m_resurrectionSpell && !IsInDuel())
+        {
+            if (Player* pTarget = SelectResurrectionTarget())
+            {
+                if (CanTryToCastSpell(pTarget, m_resurrectionSpell))
+                {
+                    // Stop drinking/eating to cast resurrection
+                    if (me->HasAura(PB_SPELL_DRINK))
+                        me->RemoveAurasDueToSpell(PB_SPELL_DRINK);
+                    if (me->HasAura(PB_SPELL_FOOD))
+                        me->RemoveAurasDueToSpell(PB_SPELL_FOOD);
+                    
+                    // Stand up if sitting
+                    if (me->GetStandState() != UNIT_STAND_STATE_STAND)
+                        me->SetStandState(UNIT_STAND_STATE_STAND);
+                    
+                    if (DoCastSpell(pTarget, m_resurrectionSpell) == SPELL_CAST_OK)
+                        return;
+                }
+            }
+        }
+
+        // All bots should prioritize dispelling over drinking
+        if (NeedsToDispelAlly())
+        {
+            // Stop drinking/eating to cast dispel
+            if (me->HasAura(PB_SPELL_DRINK))
+                me->RemoveAurasDueToSpell(PB_SPELL_DRINK);
+            if (me->HasAura(PB_SPELL_FOOD))
+                me->RemoveAurasDueToSpell(PB_SPELL_FOOD);
+            
+            // Stand up if sitting
+            if (me->GetStandState() != UNIT_STAND_STATE_STAND)
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+            
+            if (TryDispelAlly())
+                return;
+        }
+
+        // All bots should prioritize buffing over drinking
+        if (NeedsToBuffAlly())
+        {
+            // Stop drinking/eating to cast buff
+            if (me->HasAura(PB_SPELL_DRINK))
+                me->RemoveAurasDueToSpell(PB_SPELL_DRINK);
+            if (me->HasAura(PB_SPELL_FOOD))
+                me->RemoveAurasDueToSpell(PB_SPELL_FOOD);
+            
+            // Stand up if sitting
+            if (me->GetStandState() != UNIT_STAND_STATE_STAND)
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+            
+            if (TryBuffAlly())
+                return;
+        }
+
         if (DrinkAndEat())
         {
             if (!me->IsWithinDistInMap(pLeader, 100.0f))
