@@ -39,7 +39,7 @@ enum VictorNefarius : uint32
     // GOSSIP_TEXT_NEFARIUS_3    = 7199,
 
     MAX_DRAKES                   = 5,
-    MAX_DRAKE_KILLED             = 42,
+    MAX_DRAKE_KILLED             = 14,
 
     SPELL_NEFARIUS_BARRIER       = 22663, // immunity in phase 1
     SPELL_SHADOWBOLT             = 22677,
@@ -150,12 +150,12 @@ struct boss_victor_nefariusAI : ScriptedAI
     {
         m_uiKilledAdds            = 0;
         m_uiAddSpawnTimer         = 6000;
-        m_uiAddChromaSpawnTimer   = urand(7000, 9000);
+        m_uiAddChromaSpawnTimer   = urand(9000, 11000);
         m_uiShadowBoltTimer       = 5000;
         m_uiShadowBoltVolleyTimer = 15000;
-        m_uiFearTimer             = 8000;
+        m_uiFearTimer             = 10000;
         m_uiSilenceTimer          = 20000;
-        m_uiMindControlTimer      = 25000;
+        m_uiMindControlTimer      = 30000;
         m_uiShadowBlinkTimer      = 1000;
         // m_uiResetTimer         = 15 * MINUTE * IN_MILLISECONDS;
         scepterRunTime            = 0;
@@ -363,7 +363,7 @@ struct boss_victor_nefariusAI : ScriptedAI
         if (phase2bis)
             return;
 
-        if (m_uiKilledAdds >= MAX_DRAKE_KILLED) // 42 drakes killed
+        if (m_uiKilledAdds >= MAX_DRAKE_KILLED) // 14 drakes killed
         {
             phase2bis = true;
             if (phase2)
@@ -384,7 +384,7 @@ struct boss_victor_nefariusAI : ScriptedAI
                 aNefarianLocs[1].m_fZ,
                 5.000f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 10 * IN_MILLISECONDS);
 
-            m_uiAddSpawnTimer = urand(6000, 7000);
+            m_uiAddSpawnTimer = urand(16000, 20000);
         }
         else
             m_uiAddSpawnTimer -= uiDiff;
@@ -406,11 +406,11 @@ struct boss_victor_nefariusAI : ScriptedAI
         else
             m_uiAddChromaSpawnTimer -= uiDiff;
 
-        if (phase2) // 40 drakes killed
+        if (phase2) // 16 drakes killed (Lavender Dreams change)
             return;
 
         // Begin phase 2 by spawning Nefarian
-        if (m_uiKilledAdds >= (MAX_DRAKE_KILLED - 2)) // 40 drakes killed
+        if (m_uiKilledAdds >= (MAX_DRAKE_KILLED)) // 14 drakes killed (Lavender Dreams change)
         {
             // Inturrupt any spell casting
             m_creature->InterruptNonMeleeSpells(false);
@@ -434,8 +434,8 @@ struct boss_victor_nefariusAI : ScriptedAI
                 pNefarian->SetFly(true);
             }
 
-            // Nefarian spawn when 40 drakes are killed
-            // Adds will stop spawning when 42 are killed
+            // Nefarian spawn when 14 drakes are killed
+            // Adds will stop spawning when 14 are killed
             // He flies then arrives at his spawn point staying in the air
             // 10 seconds later: arise and cast shadow flame
             phase2 = true;
@@ -466,7 +466,7 @@ struct boss_victor_nefariusAI : ScriptedAI
             if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
             {
                 if (DoCastSpellIfCan(pTarget, SPELL_FEAR) == CAST_OK)
-                    m_uiFearTimer = urand(15000, 25000);
+                    m_uiFearTimer = urand(20000, 30000);
             }
         }
         else
@@ -478,7 +478,7 @@ struct boss_victor_nefariusAI : ScriptedAI
             if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
             {
                 if (DoCastSpellIfCan(pTarget, SPELL_SILENCE) == CAST_OK)
-                    m_uiSilenceTimer = urand(25000, 40000);
+                    m_uiSilenceTimer = urand(30000, 45000);
             }
         }
         else
@@ -537,7 +537,7 @@ struct boss_victor_nefariusAI : ScriptedAI
                 m_uiMindControledPlayerGuid = pTarget->GetObjectGuid();
                 m_uiMindControledPlayerAggro = m_creature->GetThreatManager().getThreat(pTarget);
                 if (DoCastSpellIfCan(pTarget, SPELL_SHADOW_COMMAND, CF_AURA_NOT_PRESENT) == CAST_OK)
-                    m_uiMindControlTimer = urand(25000, 40000);
+                    m_uiMindControlTimer = urand(35000, 50000);
             }
         }
         else

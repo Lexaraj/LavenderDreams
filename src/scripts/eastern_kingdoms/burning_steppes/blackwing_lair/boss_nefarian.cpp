@@ -105,7 +105,7 @@ struct boss_nefarianAI : ScriptedAI
     {
         m_uiShadowFlameTimer    = urand(18000, 25000);
         m_uiBellowingRoarTimer  = urand(25000, 30000);
-        m_uiVeilOfShadowTimer   = 15000;
+        m_uiVeilOfShadowTimer   = 20000;
         m_uiCleaveTimer         = urand(7000, 10000);
         m_uiTailLashTimer       = 10000;
         m_uiClassCallTimer      = urand(25000, 35000);
@@ -346,7 +346,7 @@ struct boss_nefarianAI : ScriptedAI
         if (m_uiShadowFlameTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature, SPELL_SHADOWFLAME) == CAST_OK)
-                m_uiShadowFlameTimer = urand(18000, 25000);
+                m_uiShadowFlameTimer = urand(20000, 25000);
         }
         else
             m_uiShadowFlameTimer -= uiDiff;
@@ -364,7 +364,7 @@ struct boss_nefarianAI : ScriptedAI
         if (m_uiVeilOfShadowTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_VEIL_OF_SHADOW) == CAST_OK)
-                m_uiVeilOfShadowTimer = urand(10000, 15000);
+                m_uiVeilOfShadowTimer = urand(18000, 22000);
         }
         else
             m_uiVeilOfShadowTimer -= uiDiff;
@@ -483,7 +483,7 @@ struct npc_corrupted_totemAI : ScriptedAI
     {
         m_uiCreatureEntry = pCreature->GetEntry();
 
-        uint32 HP = urand(200, 2000);
+        uint32 HP = urand(600, 1000);
         pCreature->SetMaxHealth(HP);
         pCreature->SetHealth(HP);
 
