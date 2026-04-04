@@ -78,6 +78,9 @@ public:
     bool NeedsToBuffAlly() const;
     bool TryBuffAlly();
     uint32 CountPlayersNeedingBuff(SpellEntry const* pSpellEntry) const;
+    uint32 CountPlayersNeedingBuffLine(SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const;
+    Player* SelectBuffTargetForBuffLine(SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const;
+    bool TargetLacksBuffLine(Unit const* pTarget, SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const;
     Unit* GetMarkedTarget(RaidTargetIcon mark) const;
     bool CanUseCrowdControl(SpellEntry const* pSpellEntry, Unit* pTarget) const;
     bool DrinkAndEat();
