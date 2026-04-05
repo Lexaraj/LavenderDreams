@@ -41,6 +41,21 @@ enum PartyBotSpells
     PB_SPELL_HONORLESS_TARGET = 2479,
 };
 
+namespace
+{
+// Group buff is preferred for this line but we cannot pay its cost yet — skip single-target so we can regen/drink.
+bool InsufficientPowerForBuffSpell(Player* caster, SpellEntry const* pSpellEntry)
+{
+    if (!caster || !pSpellEntry)
+        return false;
+    uint32 const powerCost = Spell::CalculatePowerCost(pSpellEntry, caster);
+    Powers const powerType = Powers(pSpellEntry->powerType);
+    if (powerType == POWER_HEALTH)
+        return caster->GetHealth() <= powerCost;
+    return caster->GetPower(powerType) < powerCost;
+}
+}
+
 bool PartyBotAI::OnSessionLoaded(PlayerBotEntry* entry, WorldSession* sess)
 {
     if (!m_race && !m_class)
@@ -862,6 +877,8 @@ bool PartyBotAI::NeedsToBuffAlly() const
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
                                 return true;
+                            if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofFortitude))
+                                skipFortitudeSingle = true;
                         }
                     }
                     if (m_spells.priest.pPowerWordFortitude)
@@ -894,6 +911,8 @@ bool PartyBotAI::NeedsToBuffAlly() const
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
                                 return true;
+                            if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofSpirit))
+                                skipSpiritSingle = true;
                         }
                     }
                     if (m_spells.priest.pDivineSpirit)
@@ -926,6 +945,8 @@ bool PartyBotAI::NeedsToBuffAlly() const
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
                                 return true;
+                            if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofShadowProtection))
+                                skipShadowProtSingle = true;
                         }
                     }
                     if (m_spells.priest.pShadowProtection)
@@ -970,6 +991,8 @@ bool PartyBotAI::NeedsToBuffAlly() const
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
                                 return true;
+                            if (InsufficientPowerForBuffSpell(me, m_spells.druid.pGiftoftheWild))
+                                skipMotWSingle = true;
                         }
                     }
                     if (m_spells.druid.pMarkoftheWild)
@@ -1066,6 +1089,8 @@ bool PartyBotAI::TryBuffAlly()
                                     return true;
                                 }
                             }
+                            else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofFortitude))
+                                skipFortitudeSingle = true;
                         }
                     }
                     if (m_spells.priest.pPowerWordFortitude)
@@ -1119,6 +1144,8 @@ bool PartyBotAI::TryBuffAlly()
                                     return true;
                                 }
                             }
+                            else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofSpirit))
+                                skipSpiritSingle = true;
                         }
                     }
                     if (m_spells.priest.pDivineSpirit)
@@ -1172,6 +1199,8 @@ bool PartyBotAI::TryBuffAlly()
                                     return true;
                                 }
                             }
+                            else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofShadowProtection))
+                                skipShadowProtSingle = true;
                         }
                     }
                     if (m_spells.priest.pShadowProtection)
@@ -1244,6 +1273,8 @@ bool PartyBotAI::TryBuffAlly()
                                     return true;
                                 }
                             }
+                            else if (InsufficientPowerForBuffSpell(me, m_spells.druid.pGiftoftheWild))
+                                skipMotWSingle = true;
                         }
                     }
                     if (m_spells.druid.pMarkoftheWild)

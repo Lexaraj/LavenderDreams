@@ -1113,9 +1113,9 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
 
     // Clone equipment
     std::istringstream iss(equipmentCache);
-    uint32 itemId, enchantId;
+    uint32 itemId, packedEnchants;
     uint32 slot = EQUIPMENT_SLOT_START;
-    while (iss >> itemId >> enchantId)
+    while (iss >> itemId >> packedEnchants)
     {
         if (slot < EQUIPMENT_SLOT_END)
         {
@@ -1125,12 +1125,21 @@ bool PlayerBotMgr::CloneOfflinePlayer(Player* pPlayer, ObjectGuid guid)
                 Item* pItem = newChar->EquipNewItem(slot, itemId, true);
                 if (pItem)
                 {
-                    if (enchantId)
+                    uint32 const permEnchant = PAIR32_LOPART(packedEnchants);
+                    uint32 const tempEnchamt = PAIR32_HIPART(packedEnchants);
+                    if (permEnchant)
                     {
                         pItem->ClearEnchantment(PERM_ENCHANTMENT_SLOT);
-                        pItem->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchantId, 0, 0);
+                        pItem->SetEnchantment(PERM_ENCHANTMENT_SLOT, permEnchant, 0, 0);
                         pItem->SetState(ITEM_CHANGED, newChar);
                         newChar->ApplyEnchantment(pItem, PERM_ENCHANTMENT_SLOT, true);
+                    }
+                    if (tempEnchamt)
+                    {
+                        pItem->ClearEnchantment(TEMP_ENCHANTMENT_SLOT);
+                        pItem->SetEnchantment(TEMP_ENCHANTMENT_SLOT, tempEnchamt, 0, 0);
+                        pItem->SetState(ITEM_CHANGED, newChar);
+                        newChar->ApplyEnchantment(pItem, TEMP_ENCHANTMENT_SLOT, true);
                     }
                 }
                 else
