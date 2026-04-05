@@ -150,7 +150,7 @@ struct boss_victor_nefariusAI : ScriptedAI
     {
         m_uiKilledAdds            = 0;
         m_uiAddSpawnTimer         = 6000;
-        m_uiAddChromaSpawnTimer   = urand(9000, 11000);
+        m_uiAddChromaSpawnTimer   = 9000;
         m_uiShadowBoltTimer       = 5000;
         m_uiShadowBoltVolleyTimer = 15000;
         m_uiFearTimer             = 10000;
@@ -384,7 +384,7 @@ struct boss_victor_nefariusAI : ScriptedAI
                 aNefarianLocs[1].m_fZ,
                 5.000f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 10 * IN_MILLISECONDS);
 
-            m_uiAddSpawnTimer = urand(16000, 20000);
+            m_uiAddSpawnTimer = 18000;
         }
         else
             m_uiAddSpawnTimer -= uiDiff;
@@ -401,12 +401,12 @@ struct boss_victor_nefariusAI : ScriptedAI
                 aNefarianLocs[1].m_fY,
                 aNefarianLocs[1].m_fZ,
                 5.000f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 10 * IN_MILLISECONDS);
-            m_uiAddChromaSpawnTimer = 35000;
+            m_uiAddChromaSpawnTimer = 45000;
         }
         else
             m_uiAddChromaSpawnTimer -= uiDiff;
 
-        if (phase2) // 16 drakes killed (Lavender Dreams change)
+        if (phase2) // 14 drakes killed (Lavender Dreams change)
             return;
 
         // Begin phase 2 by spawning Nefarian
@@ -446,7 +446,7 @@ struct boss_victor_nefariusAI : ScriptedAI
         if (m_uiShadowBoltTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_SHADOWBOLT) == CAST_OK)
-                m_uiShadowBoltTimer = urand(3000, 10000);
+                m_uiShadowBoltTimer = urand(12000, 15000);
         }
         else
             m_uiShadowBoltTimer -= uiDiff;
@@ -455,7 +455,7 @@ struct boss_victor_nefariusAI : ScriptedAI
         if (m_uiShadowBoltVolleyTimer < uiDiff)
         {
             if (DoCastSpellIfCan(m_creature->GetVictim(), SPELL_SHADOWBOLT_VOLLEY) == CAST_OK)
-                m_uiShadowBoltVolleyTimer = 15000;
+                m_uiShadowBoltVolleyTimer = 25000;
         }
         else
             m_uiShadowBoltVolleyTimer -= uiDiff;

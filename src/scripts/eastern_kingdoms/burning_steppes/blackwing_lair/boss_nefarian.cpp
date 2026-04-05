@@ -572,7 +572,7 @@ struct npc_corrupted_totemAI : ScriptedAI
                                 }
                                 case SPELL_HEALING_STREAM:
                                 {
-                                    damage = 14000;
+                                    damage = 1400;
                                     break; // Healing Stream : base 14
                                 }
                             }
