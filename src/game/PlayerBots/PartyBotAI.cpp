@@ -871,6 +871,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                 uint32 fortitudeCount = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
                 if (fortitudeCount > 0)
                 {
+                    bool skipFortitudeSingle = false;
                     if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
@@ -881,7 +882,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 skipFortitudeSingle = true;
                         }
                     }
-                    if (m_spells.priest.pPowerWordFortitude)
+                    if (!skipFortitudeSingle && m_spells.priest.pPowerWordFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
@@ -889,7 +890,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 return true;
                         }
                     }
-                    else if (m_spells.priest.pPrayerofFortitude)
+                    else if (!skipFortitudeSingle && m_spells.priest.pPrayerofFortitude && !m_spells.priest.pPowerWordFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
@@ -905,6 +906,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                 uint32 spiritCount = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
                 if (spiritCount > 0)
                 {
+                    bool skipSpiritSingle = false;
                     if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
@@ -915,7 +917,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 skipSpiritSingle = true;
                         }
                     }
-                    if (m_spells.priest.pDivineSpirit)
+                    if (!skipSpiritSingle && m_spells.priest.pDivineSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
@@ -923,7 +925,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 return true;
                         }
                     }
-                    else if (m_spells.priest.pPrayerofSpirit)
+                    else if (!skipSpiritSingle && m_spells.priest.pPrayerofSpirit && !m_spells.priest.pDivineSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
@@ -939,6 +941,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                 uint32 shadowProtCount = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
                 if (shadowProtCount > 0)
                 {
+                    bool skipShadowProtSingle = false;
                     if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
@@ -949,7 +952,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 skipShadowProtSingle = true;
                         }
                     }
-                    if (m_spells.priest.pShadowProtection)
+                    if (!skipShadowProtSingle && m_spells.priest.pShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
@@ -957,7 +960,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 return true;
                         }
                     }
-                    else if (m_spells.priest.pPrayerofShadowProtection)
+                    else if (!skipShadowProtSingle && m_spells.priest.pPrayerofShadowProtection && !m_spells.priest.pShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
@@ -985,6 +988,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                 uint32 motWCount = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
                 if (motWCount > 0)
                 {
+                    bool skipMotWSingle = false;
                     if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
@@ -995,7 +999,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 skipMotWSingle = true;
                         }
                     }
-                    if (m_spells.druid.pMarkoftheWild)
+                    if (!skipMotWSingle && m_spells.druid.pMarkoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
@@ -1003,7 +1007,7 @@ bool PartyBotAI::NeedsToBuffAlly() const
                                 return true;
                         }
                     }
-                    else if (m_spells.druid.pGiftoftheWild)
+                    else if (!skipMotWSingle && m_spells.druid.pGiftoftheWild && !m_spells.druid.pMarkoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
@@ -1076,6 +1080,7 @@ bool PartyBotAI::TryBuffAlly()
                 uint32 fortitudeCount = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
                 if (fortitudeCount > 0)
                 {
+                    bool skipFortitudeSingle = false;
                     if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
@@ -1093,7 +1098,7 @@ bool PartyBotAI::TryBuffAlly()
                                 skipFortitudeSingle = true;
                         }
                     }
-                    if (m_spells.priest.pPowerWordFortitude)
+                    if (!skipFortitudeSingle && m_spells.priest.pPowerWordFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
@@ -1108,7 +1113,7 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    else if (m_spells.priest.pPrayerofFortitude)
+                    else if (!skipFortitudeSingle && m_spells.priest.pPrayerofFortitude && !m_spells.priest.pPowerWordFortitude)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
@@ -1131,6 +1136,7 @@ bool PartyBotAI::TryBuffAlly()
                 uint32 spiritCount = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
                 if (spiritCount > 0)
                 {
+                    bool skipSpiritSingle = false;
                     if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
@@ -1148,7 +1154,7 @@ bool PartyBotAI::TryBuffAlly()
                                 skipSpiritSingle = true;
                         }
                     }
-                    if (m_spells.priest.pDivineSpirit)
+                    if (!skipSpiritSingle && m_spells.priest.pDivineSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
@@ -1163,7 +1169,7 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    else if (m_spells.priest.pPrayerofSpirit)
+                    else if (!skipSpiritSingle && m_spells.priest.pPrayerofSpirit && !m_spells.priest.pDivineSpirit)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
@@ -1186,6 +1192,7 @@ bool PartyBotAI::TryBuffAlly()
                 uint32 shadowProtCount = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
                 if (shadowProtCount > 0)
                 {
+                    bool skipShadowProtSingle = false;
                     if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
@@ -1203,7 +1210,7 @@ bool PartyBotAI::TryBuffAlly()
                                 skipShadowProtSingle = true;
                         }
                     }
-                    if (m_spells.priest.pShadowProtection)
+                    if (!skipShadowProtSingle && m_spells.priest.pShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
@@ -1218,7 +1225,7 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    else if (m_spells.priest.pPrayerofShadowProtection)
+                    else if (!skipShadowProtSingle && m_spells.priest.pPrayerofShadowProtection && !m_spells.priest.pShadowProtection)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
@@ -1260,6 +1267,7 @@ bool PartyBotAI::TryBuffAlly()
                 uint32 motWCount = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
                 if (motWCount > 0)
                 {
+                    bool skipMotWSingle = false;
                     if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
@@ -1277,7 +1285,7 @@ bool PartyBotAI::TryBuffAlly()
                                 skipMotWSingle = true;
                         }
                     }
-                    if (m_spells.druid.pMarkoftheWild)
+                    if (!skipMotWSingle && m_spells.druid.pMarkoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
@@ -1292,7 +1300,7 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    else if (m_spells.druid.pGiftoftheWild)
+                    else if (!skipMotWSingle && m_spells.druid.pGiftoftheWild && !m_spells.druid.pMarkoftheWild)
                     {
                         if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
@@ -2978,6 +2986,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         uint32 fortNeed = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
         if (fortNeed > 0)
         {
+            bool skipFortitudeSingle = false;
             if (fortNeed >= 2 && m_spells.priest.pPrayerofFortitude)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
@@ -2991,9 +3000,11 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                             return;
                         }
                     }
+                    else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofFortitude))
+                        skipFortitudeSingle = true;
                 }
             }
-            if (m_spells.priest.pPowerWordFortitude)
+            if (!skipFortitudeSingle && m_spells.priest.pPowerWordFortitude)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                 {
@@ -3008,7 +3019,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                     }
                 }
             }
-            else if (m_spells.priest.pPrayerofFortitude)
+            else if (!skipFortitudeSingle && m_spells.priest.pPrayerofFortitude && !m_spells.priest.pPowerWordFortitude)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                 {
@@ -3031,6 +3042,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         uint32 spiritNeed = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
         if (spiritNeed > 0)
         {
+            bool skipSpiritSingle = false;
             if (spiritNeed >= 2 && m_spells.priest.pPrayerofSpirit)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
@@ -3044,9 +3056,11 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                             return;
                         }
                     }
+                    else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofSpirit))
+                        skipSpiritSingle = true;
                 }
             }
-            if (m_spells.priest.pDivineSpirit)
+            if (!skipSpiritSingle && m_spells.priest.pDivineSpirit)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                 {
@@ -3061,7 +3075,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                     }
                 }
             }
-            else if (m_spells.priest.pPrayerofSpirit)
+            else if (!skipSpiritSingle && m_spells.priest.pPrayerofSpirit && !m_spells.priest.pDivineSpirit)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                 {
@@ -3084,6 +3098,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         uint32 shadowNeed = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
         if (shadowNeed > 0)
         {
+            bool skipShadowProtSingle = false;
             if (shadowNeed >= 2 && m_spells.priest.pPrayerofShadowProtection)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
@@ -3097,9 +3112,11 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                             return;
                         }
                     }
+                    else if (InsufficientPowerForBuffSpell(me, m_spells.priest.pPrayerofShadowProtection))
+                        skipShadowProtSingle = true;
                 }
             }
-            if (m_spells.priest.pShadowProtection)
+            if (!skipShadowProtSingle && m_spells.priest.pShadowProtection)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                 {
@@ -3114,7 +3131,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
                     }
                 }
             }
-            else if (m_spells.priest.pPrayerofShadowProtection)
+            else if (!skipShadowProtSingle && m_spells.priest.pPrayerofShadowProtection && !m_spells.priest.pShadowProtection)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                 {
@@ -4170,6 +4187,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Druid()
         uint32 motwNeed = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
         if (motwNeed > 0)
         {
+            bool skipMotWSingle = false;
             if (motwNeed >= 2 && m_spells.druid.pGiftoftheWild)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
@@ -4183,9 +4201,11 @@ void PartyBotAI::UpdateOutOfCombatAI_Druid()
                             return;
                         }
                     }
+                    else if (InsufficientPowerForBuffSpell(me, m_spells.druid.pGiftoftheWild))
+                        skipMotWSingle = true;
                 }
             }
-            if (m_spells.druid.pMarkoftheWild)
+            if (!skipMotWSingle && m_spells.druid.pMarkoftheWild)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                 {
@@ -4200,7 +4220,7 @@ void PartyBotAI::UpdateOutOfCombatAI_Druid()
                     }
                 }
             }
-            else if (m_spells.druid.pGiftoftheWild)
+            else if (!skipMotWSingle && m_spells.druid.pGiftoftheWild && !m_spells.druid.pMarkoftheWild)
             {
                 if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                 {
