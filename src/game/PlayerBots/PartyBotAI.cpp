@@ -764,6 +764,63 @@ uint32 PartyBotAI::CountPlayersNeedingBuff(SpellEntry const* pSpellEntry) const
     return count;
 }
 
+bool PartyBotAI::TargetLacksBuffLine(Unit const* pTarget, SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const
+{
+    if (!pSingleTargetSpell && !pGroupBuffSpell)
+        return false;
+    bool const lacksSingle = !pSingleTargetSpell || IsValidBuffTarget(pTarget, pSingleTargetSpell);
+    bool const lacksGroup = !pGroupBuffSpell || IsValidBuffTarget(pTarget, pGroupBuffSpell);
+    return lacksSingle && lacksGroup;
+}
+
+uint32 PartyBotAI::CountPlayersNeedingBuffLine(SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const
+{
+    if (!pSingleTargetSpell && !pGroupBuffSpell)
+        return 0;
+
+    uint32 count = 0;
+    Group* pGroup = me->GetGroup();
+    if (pGroup)
+    {
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (me->IsValidHelpfulTarget(pMember) &&
+                   !pMember->IsGameMaster() &&
+                    TargetLacksBuffLine(pMember, pSingleTargetSpell, pGroupBuffSpell) &&
+                    me->IsWithinLOSInMap(pMember) &&
+                    me->IsWithinDist(pMember, 30.0f))
+                {
+                    ++count;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+Player* PartyBotAI::SelectBuffTargetForBuffLine(SpellEntry const* pSingleTargetSpell, SpellEntry const* pGroupBuffSpell) const
+{
+    Group* pGroup = me->GetGroup();
+    if (pGroup)
+    {
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (me->IsValidHelpfulTarget(pMember) &&
+                   !pMember->IsGameMaster() &&
+                    TargetLacksBuffLine(pMember, pSingleTargetSpell, pGroupBuffSpell) &&
+                    me->IsWithinLOSInMap(pMember) &&
+                    me->IsWithinDist(pMember, 30.0f))
+                    return pMember;
+            }
+        }
+    }
+    return nullptr;
+}
+
 bool PartyBotAI::NeedsToBuffAlly() const
 {
     if (IsInDuel())
@@ -794,71 +851,98 @@ bool PartyBotAI::NeedsToBuffAlly() const
             break;
         case CLASS_PRIEST:
             // Check Fortitude buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pPowerWordFortitude)
+            if (m_spells.priest.pPowerWordFortitude || m_spells.priest.pPrayerofFortitude)
             {
-                uint32 fortitudeCount = CountPlayersNeedingBuff(m_spells.priest.pPowerWordFortitude);
+                uint32 fortitudeCount = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
                 if (fortitudeCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
                                 return true;
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPowerWordFortitude))
+                    if (m_spells.priest.pPowerWordFortitude)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
-                            return true;
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+                                return true;
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofFortitude)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                                return true;
+                        }
                     }
                 }
             }
             // Check Spirit buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pDivineSpirit)
+            if (m_spells.priest.pDivineSpirit || m_spells.priest.pPrayerofSpirit)
             {
-                uint32 spiritCount = CountPlayersNeedingBuff(m_spells.priest.pDivineSpirit);
+                uint32 spiritCount = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
                 if (spiritCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofSpirit))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
                                 return true;
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pDivineSpirit))
+                    if (m_spells.priest.pDivineSpirit)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
-                            return true;
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
+                                return true;
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofSpirit)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                                return true;
+                        }
                     }
                 }
             }
             // Check Shadow Protection buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pShadowProtection)
+            if (m_spells.priest.pShadowProtection || m_spells.priest.pPrayerofShadowProtection)
             {
-                uint32 shadowProtCount = CountPlayersNeedingBuff(m_spells.priest.pShadowProtection);
+                uint32 shadowProtCount = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
                 if (shadowProtCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
                                 return true;
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
+                    if (m_spells.priest.pShadowProtection)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
-                            return true;
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+                                return true;
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofShadowProtection)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                                return true;
+                        }
                     }
                 }
             }
@@ -875,25 +959,34 @@ bool PartyBotAI::NeedsToBuffAlly() const
             break;
         case CLASS_DRUID:
             // Check Mark of the Wild buffs (prefer single target if only 1 player needs it)
-            if (m_spells.druid.pMarkoftheWild)
+            if (m_spells.druid.pMarkoftheWild || m_spells.druid.pGiftoftheWild)
             {
-                uint32 motWCount = CountPlayersNeedingBuff(m_spells.druid.pMarkoftheWild);
+                uint32 motWCount = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
                 if (motWCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pGiftoftheWild))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
                                 return true;
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.druid.pMarkoftheWild))
+                    if (m_spells.druid.pMarkoftheWild)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
-                            return true;
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+                                return true;
+                        }
+                    }
+                    else if (m_spells.druid.pGiftoftheWild)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                                return true;
+                        }
                     }
                 }
             }
@@ -955,15 +1048,14 @@ bool PartyBotAI::TryBuffAlly()
             break;
         case CLASS_PRIEST:
             // Check Fortitude buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pPowerWordFortitude)
+            if (m_spells.priest.pPowerWordFortitude || m_spells.priest.pPrayerofFortitude)
             {
-                uint32 fortitudeCount = CountPlayersNeedingBuff(m_spells.priest.pPowerWordFortitude);
+                uint32 fortitudeCount = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
                 if (fortitudeCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (fortitudeCount >= 2 && m_spells.priest.pPrayerofFortitude)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
                             {
@@ -976,31 +1068,47 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPowerWordFortitude))
+                    if (m_spells.priest.pPowerWordFortitude)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                         {
-                            if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
                             {
-                                m_isBuffing = true;
-                                me->ClearTarget();
-                                return true;
+                                if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofFortitude)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
                             }
                         }
                     }
                 }
             }
             // Check Spirit buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pDivineSpirit)
+            if (m_spells.priest.pDivineSpirit || m_spells.priest.pPrayerofSpirit)
             {
-                uint32 spiritCount = CountPlayersNeedingBuff(m_spells.priest.pDivineSpirit);
+                uint32 spiritCount = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
                 if (spiritCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (spiritCount >= 2 && m_spells.priest.pPrayerofSpirit)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofSpirit))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
                             {
@@ -1013,31 +1121,47 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pDivineSpirit))
+                    if (m_spells.priest.pDivineSpirit)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                         {
-                            if (DoCastSpell(pTarget, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
                             {
-                                m_isBuffing = true;
-                                me->ClearTarget();
-                                return true;
+                                if (DoCastSpell(pTarget, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofSpirit)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
                             }
                         }
                     }
                 }
             }
             // Check Shadow Protection buffs (prefer single target if only 1 player needs it)
-            if (m_spells.priest.pShadowProtection)
+            if (m_spells.priest.pShadowProtection || m_spells.priest.pPrayerofShadowProtection)
             {
-                uint32 shadowProtCount = CountPlayersNeedingBuff(m_spells.priest.pShadowProtection);
+                uint32 shadowProtCount = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
                 if (shadowProtCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (shadowProtCount >= 2 && m_spells.priest.pPrayerofShadowProtection)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
                             {
@@ -1050,16 +1174,33 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
+                    if (m_spells.priest.pShadowProtection)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                         {
-                            if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
                             {
-                                m_isBuffing = true;
-                                me->ClearTarget();
-                                return true;
+                                if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else if (m_spells.priest.pPrayerofShadowProtection)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -1085,15 +1226,14 @@ bool PartyBotAI::TryBuffAlly()
             break;
         case CLASS_DRUID:
             // Check Mark of the Wild buffs (prefer single target if only 1 player needs it)
-            if (m_spells.druid.pMarkoftheWild)
+            if (m_spells.druid.pMarkoftheWild || m_spells.druid.pGiftoftheWild)
             {
-                uint32 motWCount = CountPlayersNeedingBuff(m_spells.druid.pMarkoftheWild);
+                uint32 motWCount = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
                 if (motWCount > 0)
                 {
-                    // Use group buff if 2+ players need it and we have it
                     if (motWCount >= 2 && m_spells.druid.pGiftoftheWild)
                     {
-                        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pGiftoftheWild))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
                             if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
                             {
@@ -1106,16 +1246,33 @@ bool PartyBotAI::TryBuffAlly()
                             }
                         }
                     }
-                    // Use single target if only 1 player needs it or no group buff
-                    if (Player* pTarget = SelectBuffTarget(m_spells.druid.pMarkoftheWild))
+                    if (m_spells.druid.pMarkoftheWild)
                     {
-                        if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                         {
-                            if (DoCastSpell(pTarget, m_spells.druid.pMarkoftheWild) == SPELL_CAST_OK)
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
                             {
-                                m_isBuffing = true;
-                                me->ClearTarget();
-                                return true;
+                                if (DoCastSpell(pTarget, m_spells.druid.pMarkoftheWild) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else if (m_spells.druid.pGiftoftheWild)
+                    {
+                        if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
+                        {
+                            if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                            {
+                                if (DoCastSpell(pTarget, m_spells.druid.pGiftoftheWild) == SPELL_CAST_OK)
+                                {
+                                    m_isBuffing = true;
+                                    me->ClearTarget();
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -2785,95 +2942,160 @@ void PartyBotAI::UpdateOutOfCombatAI_Priest()
         }
     }
 
-    if (m_spells.priest.pPrayerofFortitude)
+    if (m_spells.priest.pPowerWordFortitude || m_spells.priest.pPrayerofFortitude)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofFortitude))
+        uint32 fortNeed = CountPlayersNeedingBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude);
+        if (fortNeed > 0)
         {
-            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+            if (fortNeed >= 2 && m_spells.priest.pPrayerofFortitude)
             {
-                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
-        }
-    }
-    else if (m_spells.priest.pPowerWordFortitude)
-    {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPowerWordFortitude))
-        {
-            if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+            if (m_spells.priest.pPowerWordFortitude)
             {
-                if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPowerWordFortitude))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPowerWordFortitude) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    if (m_spells.priest.pPrayerofSpirit)
-    {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofSpirit))
-        {
-            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+            else if (m_spells.priest.pPrayerofFortitude)
             {
-                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pPowerWordFortitude, m_spells.priest.pPrayerofFortitude))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
-                }
-            }
-        }
-    }
-    else if (m_spells.priest.pDivineSpirit)
-    {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pDivineSpirit))
-        {
-            if (CanTryToCastSpell(me, m_spells.priest.pDivineSpirit))
-            {
-                if (DoCastSpell(me, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
-                {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofFortitude))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofFortitude) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
         }
     }
 
-    if (m_spells.priest.pPrayerofShadowProtection)
+    if (m_spells.priest.pDivineSpirit || m_spells.priest.pPrayerofSpirit)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pPrayerofShadowProtection))
+        uint32 spiritNeed = CountPlayersNeedingBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit);
+        if (spiritNeed > 0)
         {
-            if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+            if (spiritNeed >= 2 && m_spells.priest.pPrayerofSpirit)
             {
-                if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
+                }
+            }
+            if (m_spells.priest.pDivineSpirit)
+            {
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pDivineSpirit))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pDivineSpirit) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
+                }
+            }
+            else if (m_spells.priest.pPrayerofSpirit)
+            {
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pDivineSpirit, m_spells.priest.pPrayerofSpirit))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofSpirit))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofSpirit) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
         }
     }
-    else
-    if (m_spells.priest.pShadowProtection)
+
+    if (m_spells.priest.pShadowProtection || m_spells.priest.pPrayerofShadowProtection)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.priest.pShadowProtection))
+        uint32 shadowNeed = CountPlayersNeedingBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection);
+        if (shadowNeed > 0)
         {
-            if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+            if (shadowNeed >= 2 && m_spells.priest.pPrayerofShadowProtection)
             {
-                if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
+                }
+            }
+            if (m_spells.priest.pShadowProtection)
+            {
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pShadowProtection))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pShadowProtection) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
+                }
+            }
+            else if (m_spells.priest.pPrayerofShadowProtection)
+            {
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.priest.pShadowProtection, m_spells.priest.pPrayerofShadowProtection))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.priest.pPrayerofShadowProtection) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -3912,32 +4134,54 @@ void PartyBotAI::UpdateOutOfCombatAI_Druid()
         return;
     }
 
-    if (m_spells.druid.pGiftoftheWild)
+    if (m_spells.druid.pMarkoftheWild || m_spells.druid.pGiftoftheWild)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pGiftoftheWild))
+        uint32 motwNeed = CountPlayersNeedingBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild);
+        if (motwNeed > 0)
         {
-            if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+            if (motwNeed >= 2 && m_spells.druid.pGiftoftheWild)
             {
-                if (DoCastSpell(pTarget, m_spells.druid.pGiftoftheWild) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pGiftoftheWild) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
-        }
-    }
-    else if (m_spells.druid.pMarkoftheWild)
-    {
-        if (Player* pTarget = SelectBuffTarget(m_spells.druid.pMarkoftheWild))
-        {
-            if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+            if (m_spells.druid.pMarkoftheWild)
             {
-                if (DoCastSpell(pTarget, m_spells.druid.pMarkoftheWild) == SPELL_CAST_OK)
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
                 {
-                    m_isBuffing = true;
-                    me->ClearTarget();
-                    return;
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pMarkoftheWild))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pMarkoftheWild) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
+                }
+            }
+            else if (m_spells.druid.pGiftoftheWild)
+            {
+                if (Player* pTarget = SelectBuffTargetForBuffLine(m_spells.druid.pMarkoftheWild, m_spells.druid.pGiftoftheWild))
+                {
+                    if (CanTryToCastSpell(pTarget, m_spells.druid.pGiftoftheWild))
+                    {
+                        if (DoCastSpell(pTarget, m_spells.druid.pGiftoftheWild) == SPELL_CAST_OK)
+                        {
+                            m_isBuffing = true;
+                            me->ClearTarget();
+                            return;
+                        }
+                    }
                 }
             }
         }
