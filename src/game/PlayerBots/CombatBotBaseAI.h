@@ -316,6 +316,7 @@ public:
             SpellEntry const* pConcentrationAura;
             SpellEntry const* pSanctityAura;
             SpellEntry const* pBlessingOfSanctuary;
+            SpellEntry const* pValianceAura;
         } paladin;
         struct
         {
