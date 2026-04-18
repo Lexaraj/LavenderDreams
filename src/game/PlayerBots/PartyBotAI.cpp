@@ -832,9 +832,10 @@ bool PartyBotAI::NeedsToBuffAlly() const
         case CLASS_PALADIN:
             if (m_spells.paladin.pBlessingBuff)
             {
-                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                SpellEntry const* pBlessing = nullptr;
+                if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
                 {
-                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                    if (CanTryToCastSpell(pTarget, pBlessing))
                         return true;
                 }
             }
@@ -1049,11 +1050,12 @@ bool PartyBotAI::TryBuffAlly()
         case CLASS_PALADIN:
             if (m_spells.paladin.pBlessingBuff)
             {
-                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                SpellEntry const* pBlessing = nullptr;
+                if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
                 {
-                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                    if (CanTryToCastSpell(pTarget, pBlessing))
                     {
-                        if (DoCastSpell(pTarget, m_spells.paladin.pBlessingBuff) == SPELL_CAST_OK)
+                        if (DoCastSpell(pTarget, pBlessing) == SPELL_CAST_OK)
                         {
                             m_isBuffing = true;
                             me->ClearTarget();
@@ -2109,17 +2111,18 @@ void PartyBotAI::UpdateOutOfCombatAI_Paladin()
 
     if (m_spells.paladin.pBlessingBuff)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+        SpellEntry const* pBlessing = nullptr;
+        if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
         {
-            if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+            if (CanTryToCastSpell(pTarget, pBlessing))
             {
-                if (DoCastSpell(pTarget, m_spells.paladin.pBlessingBuff) == SPELL_CAST_OK)
+                if (DoCastSpell(pTarget, pBlessing) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
                     me->ClearTarget();
                     return;
                 }
-            }  
+            }
         }
     }
 

@@ -131,6 +131,25 @@ void CombatBotBaseAI::ResetSpellData()
     m_spellListTaunt.clear();
 }
 
+// Helper to pick the first spell in each preference list that the bot actually knows
+inline SpellEntry const* PickFirstPaladinBlessing(
+    SpellEntry const* a,
+    SpellEntry const* b = nullptr,
+    SpellEntry const* c = nullptr,
+    SpellEntry const* d = nullptr,
+    SpellEntry const* e = nullptr)
+{
+    if (a)
+        return a;
+    if (b)
+        return b;
+    if (c)
+        return c;
+    if (d)
+        return d;
+    return e;
+}
+
 void CombatBotBaseAI::PopulateSpellData()
 {
     // Paladin Seals
@@ -144,6 +163,11 @@ void CombatBotBaseAI::PopulateSpellData()
     SpellEntry const* pBlessingOfWisdom = nullptr;
     SpellEntry const* pBlessingOfKings = nullptr;
     SpellEntry const* pBlessingOfSanctuary = nullptr;
+    SpellEntry const* pGreaterBlessingOfLight = nullptr;
+    SpellEntry const* pGreaterBlessingOfMight = nullptr;
+    SpellEntry const* pGreaterBlessingOfWisdom = nullptr;
+    SpellEntry const* pGreaterBlessingOfKings = nullptr;
+    SpellEntry const* pGreaterBlessingOfSanctuary = nullptr;
 
     // Paladin Auras
     SpellEntry const* pDevotionAura = nullptr;
@@ -271,25 +295,50 @@ void CombatBotBaseAI::PopulateSpellData()
                     if (IsHigherRankSpell(m_spells.paladin.pBlessingOfProtection))
                         m_spells.paladin.pBlessingOfProtection = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Greater Blessing of Sanctuary") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pGreaterBlessingOfSanctuary))
+                        pGreaterBlessingOfSanctuary = pSpellEntry;
+                }
                 else if (pSpellEntry->SpellName[0].find("Blessing of Sanctuary") != std::string::npos)
                 {
                     if (IsHigherRankSpell(pBlessingOfSanctuary))
                         pBlessingOfSanctuary = pSpellEntry;
+                }
+                else if (pSpellEntry->SpellName[0].find("Greater Blessing of Kings") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pGreaterBlessingOfKings))
+                        pGreaterBlessingOfKings = pSpellEntry;
                 }
                 else if (pSpellEntry->SpellName[0].find("Blessing of Kings") != std::string::npos)
                 {
                     if (IsHigherRankSpell(pBlessingOfKings))
                         pBlessingOfKings = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Greater Blessing of Wisdom") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pGreaterBlessingOfWisdom))
+                        pGreaterBlessingOfWisdom = pSpellEntry;
+                }
                 else if (pSpellEntry->SpellName[0].find("Blessing of Wisdom") != std::string::npos)
                 {
                     if (IsHigherRankSpell(pBlessingOfWisdom))
                         pBlessingOfWisdom = pSpellEntry;
                 }
+                else if (pSpellEntry->SpellName[0].find("Greater Blessing of Might") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pGreaterBlessingOfMight))
+                        pGreaterBlessingOfMight = pSpellEntry;
+                }
                 else if (pSpellEntry->SpellName[0].find("Blessing of Might") != std::string::npos)
                 {
                     if (IsHigherRankSpell(pBlessingOfMight))
                         pBlessingOfMight = pSpellEntry;
+                }
+                else if (pSpellEntry->SpellName[0].find("Greater Blessing of Light") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pGreaterBlessingOfLight))
+                        pGreaterBlessingOfLight = pSpellEntry;
                 }
                 else if (pSpellEntry->SpellName[0].find("Blessing of Light") != std::string::npos)
                 {
@@ -1674,22 +1723,30 @@ void CombatBotBaseAI::PopulateSpellData()
             else
                 m_spells.paladin.pSeal = pSealOfRighteousness;
 
-            if (pBlessingOfSanctuary && m_role == ROLE_TANK)
-                m_spells.paladin.pBlessingBuff = pBlessingOfSanctuary;
-            else if (pBlessingOfKings)
-                m_spells.paladin.pBlessingBuff = pBlessingOfKings;
-            else    
-            {
-                std::vector<SpellEntry const*> blessings;
-                if (pBlessingOfLight)
-                    blessings.push_back(pBlessingOfLight);
-                if (pBlessingOfMight)
-                    blessings.push_back(pBlessingOfMight);
-                if (pBlessingOfWisdom)
-                    blessings.push_back(pBlessingOfWisdom);
-                if (!blessings.empty())
-                    m_spells.paladin.pBlessingBuff = SelectRandomContainerElement(blessings);
-            }
+            m_spells.paladin.pBlessingOfSanctuary = pBlessingOfSanctuary;
+            m_spells.paladin.pBlessingOfKings = pBlessingOfKings;
+            m_spells.paladin.pBlessingOfLight = pBlessingOfLight;
+            m_spells.paladin.pBlessingOfMight = pBlessingOfMight;
+            m_spells.paladin.pBlessingOfWisdom = pBlessingOfWisdom;
+            m_spells.paladin.pGreaterBlessingOfSanctuary = pGreaterBlessingOfSanctuary;
+            m_spells.paladin.pGreaterBlessingOfKings = pGreaterBlessingOfKings;
+            m_spells.paladin.pGreaterBlessingOfLight = pGreaterBlessingOfLight;
+            m_spells.paladin.pGreaterBlessingOfMight = pGreaterBlessingOfMight;
+            m_spells.paladin.pGreaterBlessingOfWisdom = pGreaterBlessingOfWisdom;
+            // Any known blessing (greater or normal) for GCD / "has blessing spells" checks
+            m_spells.paladin.pBlessingBuff = PickFirstPaladinBlessing(
+                m_spells.paladin.pGreaterBlessingOfSanctuary,
+                m_spells.paladin.pBlessingOfSanctuary,
+                m_spells.paladin.pGreaterBlessingOfKings,
+                m_spells.paladin.pBlessingOfKings,
+                m_spells.paladin.pGreaterBlessingOfLight);
+            if (!m_spells.paladin.pBlessingBuff)
+                m_spells.paladin.pBlessingBuff = PickFirstPaladinBlessing(
+                    m_spells.paladin.pBlessingOfLight,
+                    m_spells.paladin.pGreaterBlessingOfMight,
+                    m_spells.paladin.pBlessingOfMight,
+                    m_spells.paladin.pGreaterBlessingOfWisdom,
+                    m_spells.paladin.pBlessingOfWisdom);
             if (pDevotionAura && m_role == ROLE_TANK)
                 m_spells.paladin.pAura = pDevotionAura;
             else if (pConcentrationAura && m_role == ROLE_HEALER)
@@ -2279,6 +2336,103 @@ Player* CombatBotBaseAI::SelectBuffTarget(SpellEntry const* pSpellEntry) const
                     me->IsWithinDist(pMember, 30.0f))
                     return pMember;
             }
+        }
+    }
+
+    return nullptr;
+}
+
+// Choose which blessing spell to cast on pTarget (greater rank preferred when known).
+SpellEntry const* CombatBotBaseAI::SelectPaladinBlessingSpellForTarget(Player const* pTarget) const
+{
+    if (!pTarget || me->GetClass() != CLASS_PALADIN)
+        return nullptr;
+
+    SpellEntry const* const sanc = PickFirstPaladinBlessing(
+        m_spells.paladin.pGreaterBlessingOfSanctuary,
+        m_spells.paladin.pBlessingOfSanctuary);
+    SpellEntry const* const light = PickFirstPaladinBlessing(
+        m_spells.paladin.pGreaterBlessingOfLight,
+        m_spells.paladin.pBlessingOfLight);
+    SpellEntry const* const kings = PickFirstPaladinBlessing(
+        m_spells.paladin.pGreaterBlessingOfKings,
+        m_spells.paladin.pBlessingOfKings);
+    SpellEntry const* const might = PickFirstPaladinBlessing(
+        m_spells.paladin.pGreaterBlessingOfMight,
+        m_spells.paladin.pBlessingOfMight);
+    SpellEntry const* const wisdom = PickFirstPaladinBlessing(
+        m_spells.paladin.pGreaterBlessingOfWisdom,
+        m_spells.paladin.pBlessingOfWisdom);
+
+    // Prot paladin: mitigation first, then Light, then stats.
+    if (pTarget->HasSpell(SPELL_HOLY_SHIELD))
+        return PickFirstPaladinBlessing(sanc, light, kings, wisdom, might);
+
+    uint8 const cls = pTarget->GetClass();
+    switch (cls)
+    {
+        // Physical DPS: Might, then Kings
+        case CLASS_WARRIOR:
+        case CLASS_ROGUE:
+            return PickFirstPaladinBlessing(might, kings);
+        // Hunter
+        case CLASS_HUNTER:
+            return PickFirstPaladinBlessing(kings, wisdom);
+        // Mana casters / healers
+        case CLASS_MAGE:
+        case CLASS_WARLOCK:
+        case CLASS_PRIEST:
+            return PickFirstPaladinBlessing(wisdom, kings);
+        case CLASS_SHAMAN:
+            // treat like physical; else caster/resto.
+            if (pTarget->HasSpell(SPELL_STORMSTRIKE))
+                return PickFirstPaladinBlessing(might, kings);
+            return PickFirstPaladinBlessing(wisdom, kings);
+        case CLASS_DRUID:
+            // Balance
+            if (pTarget->HasSpell(SPELL_MOONKIN_FORM))
+                return PickFirstPaladinBlessing(wisdom, kings, might);
+            // Feral
+            if (pTarget->HasSpell(SPELL_LEADER_OF_THE_PACK))
+                return PickFirstPaladinBlessing(might, kings, wisdom);
+            return PickFirstPaladinBlessing(wisdom, kings, might);
+        case CLASS_PALADIN:
+            // Ret: Might. Holy / generic: Wisdom.
+            if (pTarget->HasSpell(SPELL_SANCTITY_AURA))
+                return PickFirstPaladinBlessing(might, kings, wisdom);
+            return PickFirstPaladinBlessing(wisdom, kings, might);
+        default:
+            // Unknown class: Kings is the usual group default, then Might / Wisdom.
+            return PickFirstPaladinBlessing(kings, might, wisdom);
+    }
+}
+
+Player* CombatBotBaseAI::SelectPaladinBlessingBuffTarget(SpellEntry const*& outSpell) const
+{
+    outSpell = nullptr;
+    if (me->GetClass() != CLASS_PALADIN || !m_spells.paladin.pBlessingBuff)
+        return nullptr;
+
+    Group* pGroup = me->GetGroup();
+    if (!pGroup)
+        return nullptr;
+
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
+    {
+        if (Player* pMember = itr->getSource())
+        {
+            if (!me->IsValidHelpfulTarget(pMember) ||
+                pMember->IsGameMaster() ||
+                !me->IsWithinLOSInMap(pMember) ||
+                !me->IsWithinDist(pMember, 30.0f))
+                continue;
+
+            SpellEntry const* pBlessing = SelectPaladinBlessingSpellForTarget(pMember);
+            if (!pBlessing || !IsValidBuffTarget(pMember, pBlessing))
+                continue;
+
+            outSpell = pBlessing;
+            return pMember;
         }
     }
 
