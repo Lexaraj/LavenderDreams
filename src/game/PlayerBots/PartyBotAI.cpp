@@ -832,9 +832,10 @@ bool PartyBotAI::NeedsToBuffAlly() const
         case CLASS_PALADIN:
             if (m_spells.paladin.pBlessingBuff)
             {
-                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                SpellEntry const* pBlessing = nullptr;
+                if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
                 {
-                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                    if (CanTryToCastSpell(pTarget, pBlessing))
                         return true;
                 }
             }
@@ -1049,11 +1050,12 @@ bool PartyBotAI::TryBuffAlly()
         case CLASS_PALADIN:
             if (m_spells.paladin.pBlessingBuff)
             {
-                if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+                SpellEntry const* pBlessing = nullptr;
+                if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
                 {
-                    if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+                    if (CanTryToCastSpell(pTarget, pBlessing))
                     {
-                        if (DoCastSpell(pTarget, m_spells.paladin.pBlessingBuff) == SPELL_CAST_OK)
+                        if (DoCastSpell(pTarget, pBlessing) == SPELL_CAST_OK)
                         {
                             m_isBuffing = true;
                             me->ClearTarget();
@@ -1469,6 +1471,45 @@ void PartyBotAI::SetOwner(Player* pOwner)
     AddToPlayerGroup();
 }
 
+void PartyBotAI::ApplySavedPaladinAuraPreference()
+{
+    if (me->GetClass() != CLASS_PALADIN || !m_paladinAuraPreference)
+        return;
+    m_spells.paladin.pAura = m_paladinAuraPreference;
+}
+
+bool PartyBotAI::TryApplyPaladinAura(std::string const& messageLower, std::string* outChosenAuraName)
+{
+    if (me->GetClass() != CLASS_PALADIN)
+        return false;
+
+    SpellEntry const* aura = nullptr;
+    if (messageLower.find("devotion") != std::string::npos || messageLower.find("devo") != std::string::npos)
+        aura = m_spells.paladin.pDevotionAura;
+    else if (messageLower.find("concentration") != std::string::npos || messageLower.find("conc") != std::string::npos)
+        aura = m_spells.paladin.pConcentrationAura;
+    else if (messageLower.find("sanctity") != std::string::npos || messageLower.find("sanc") != std::string::npos)
+        aura = m_spells.paladin.pSanctityAura;
+    else if (messageLower.find("retribution") != std::string::npos || messageLower.find("ret") != std::string::npos)
+        aura = m_spells.paladin.pRetributionAura;
+    else if (messageLower.find("valiance") != std::string::npos || messageLower.find("val") != std::string::npos)
+        aura = m_spells.paladin.pValianceAura;
+
+    if (!aura)
+        return false;
+
+    m_paladinAuraPreference = aura;
+    m_spells.paladin.pAura = aura;
+
+    if (outChosenAuraName)
+        *outChosenAuraName = aura->SpellName[0];
+
+    if (CanTryToCastSpell(me, aura))
+        DoCastSpell(me, aura);
+
+    return true;
+}
+
 void PartyBotAI::OnPacketReceived(WorldPacket const* packet)
 {
     //printf("Bot received %s\n", LookupOpcodeName(packet->GetOpcode()));
@@ -1577,6 +1618,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
 
         ResetSpellData();
         PopulateSpellData();
+        ApplySavedPaladinAuraPreference();
         AddAllSpellReagents();
         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SPAWNING);
         SummonPetIfNeeded();
@@ -1598,6 +1640,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
     {
         ResetSpellData();
         PopulateSpellData();
+        ApplySavedPaladinAuraPreference();
         m_resetSpellData = false;
     }
 
@@ -2109,17 +2152,18 @@ void PartyBotAI::UpdateOutOfCombatAI_Paladin()
 
     if (m_spells.paladin.pBlessingBuff)
     {
-        if (Player* pTarget = SelectBuffTarget(m_spells.paladin.pBlessingBuff))
+        SpellEntry const* pBlessing = nullptr;
+        if (Player* pTarget = SelectPaladinBlessingBuffTarget(pBlessing))
         {
-            if (CanTryToCastSpell(pTarget, m_spells.paladin.pBlessingBuff))
+            if (CanTryToCastSpell(pTarget, pBlessing))
             {
-                if (DoCastSpell(pTarget, m_spells.paladin.pBlessingBuff) == SPELL_CAST_OK)
+                if (DoCastSpell(pTarget, pBlessing) == SPELL_CAST_OK)
                 {
                     m_isBuffing = true;
                     me->ClearTarget();
                     return;
                 }
-            }  
+            }
         }
     }
 

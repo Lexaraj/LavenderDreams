@@ -226,6 +226,35 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
     std::string msg = message;
     std::transform(msg.begin(), msg.end(), msg.begin(), ::tolower);
 
+    // My name
+    // Check if message contains bot names
+    if (Group* group = sender->GetGroup())
+    {
+        for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* pMember = itr->getSource())
+            {
+                if (pMember->GetGUIDLow() == playerGuid)
+                    continue;
+
+                if (pMember->AI())
+                {
+                    std::string mName = pMember->GetName();
+                    uint8 mClass = pMember->GetClass();
+                    std::string mNameLower = mName;
+                    std::transform(mNameLower.begin(), mNameLower.end(), mNameLower.begin(), ::tolower);
+
+                    if (msg.find(mNameLower) != std::string::npos)
+                    {
+                        ProcessDirectMessage(senderGuid, message, pMember);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+
     // Greetings
     if (std::find(greetings.begin(), greetings.end(), msg) != greetings.end())
     {
@@ -251,7 +280,8 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
 
 
     // Who is the pLeader
-    if (msg.find("who's your daddy") != std::string::npos)
+    if (msg.find("who's your daddy") != std::string::npos || 
+        msg.find("who is your daddy") != std::string::npos)
     {
         if (Group* group = sender->GetGroup())
         {
@@ -293,33 +323,59 @@ void PartyBotChat::ProcessPartyMessage(ObjectGuid const& senderGuid, std::string
         }
     }
 
-
-    // My name
-    // Check if message contains bot names
-    if (Group* group = sender->GetGroup())
-    {
-        for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+    // Paladin party bots
+    bool const paladinAuraVerb = (msg.find("use") != std::string::npos || msg.find("cast") != std::string::npos);
+    bool const paladinAuraTarget = (msg.find("devotion") != std::string::npos ||
+        msg.find("devo") != std::string::npos ||
+        msg.find("concentration") != std::string::npos ||
+        msg.find("conc") != std::string::npos ||
+        msg.find("sanctity") != std::string::npos ||
+        msg.find("sanc") != std::string::npos ||
+        msg.find("retribution") != std::string::npos ||
+        msg.find("ret") != std::string::npos ||
+        msg.find("valiance") != std::string::npos ||
+        msg.find("val") != std::string::npos);
+    if (paladinAuraVerb && paladinAuraTarget &&
+        (msg.find("paladin") != std::string::npos || 
+         msg.find("pal") != std::string::npos ||
+         msg.find("pally") != std::string::npos ||
+         msg.find("aura") != std::string::npos)
+    ) {
+        Player* respondent = nullptr;
+        std::string chosenAuraName;
+        if (Group* group = sender->GetGroup())
         {
-            if (Player* pMember = itr->getSource())
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
             {
-                if (pMember->GetGUIDLow() == playerGuid)
-                    continue;
-
-                if (pMember->AI())
+                if (Player* pMember = itr->getSource())
                 {
-                    std::string mName = pMember->GetName();
-                    uint8 mClass = pMember->GetClass();
-                    std::string mNameLower = mName;
-                    std::transform(mNameLower.begin(), mNameLower.end(), mNameLower.begin(), ::tolower);
-
-                    if (msg.find(mNameLower) != std::string::npos)
-                        ProcessDirectMessage(senderGuid, message, pMember);
+                    if (pMember->GetGUIDLow() == playerGuid)
+                        continue;
+                    if (pMember->GetClass() != CLASS_PALADIN)
+                        continue;
+                    if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(pMember->AI()))
+                    {
+                        std::string thisAura;
+                        if (pAI->TryApplyPaladinAura(msg, &thisAura))
+                        {
+                            if (!respondent)
+                            {
+                                respondent = pMember;
+                                chosenAuraName = std::move(thisAura);
+                            }
+                        }
+                    }
                 }
             }
         }
+        if (respondent && !chosenAuraName.empty())
+        {
+            char reply[192];
+            snprintf(reply, sizeof(reply), "Using %s.", chosenAuraName.c_str());
+            SendPartyChat(reply, respondent);
+        }
     }
 }
-
 
 void PartyBotChat::ProcessDirectMessage(ObjectGuid const& senderGuid, std::string const& message, Player* player)
 {
@@ -357,6 +413,32 @@ void PartyBotChat::ProcessDirectMessage(ObjectGuid const& senderGuid, std::strin
             char message[128];
             snprintf(message, sizeof(message), "Pulling!", sender->GetName());
             SendPartyChat(message, player);
+        }
+    }
+    else if (player->GetClass() == CLASS_PALADIN &&
+             (messageLower.find("use") != std::string::npos || messageLower.find("cast") != std::string::npos))
+    {
+        if (messageLower.find("devotion") != std::string::npos ||
+            messageLower.find("devo") != std::string::npos ||
+            messageLower.find("concentration") != std::string::npos ||
+            messageLower.find("conc") != std::string::npos ||
+            messageLower.find("sanctity") != std::string::npos ||
+            messageLower.find("sanc") != std::string::npos ||
+            messageLower.find("retribution") != std::string::npos ||
+            messageLower.find("ret") != std::string::npos ||
+            messageLower.find("valiance") != std::string::npos ||
+            messageLower.find("val") != std::string::npos)
+        {
+            if (PartyBotAI* pAI = dynamic_cast<PartyBotAI*>(player->AI()))
+            {
+                std::string auraName;
+                if (pAI->TryApplyPaladinAura(messageLower, &auraName))
+                {
+                    char reply[192];
+                    snprintf(reply, sizeof(reply), "Using %s.", auraName.c_str());
+                    SendPartyChat(reply, player);
+                }
+            }
         }
     }
 

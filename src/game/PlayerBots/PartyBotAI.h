@@ -17,6 +17,8 @@
 #ifndef MANGOS_PARTYBOTAI_H
 #define MANGOS_PARTYBOTAI_H
 
+#include <string>
+
 #include "CombatBotBaseAI.h"
 #include "Group.h"
 #include "ObjectAccessor.h"
@@ -65,6 +67,8 @@ public:
     void CloneFromPlayer(Player const* pPlayer);
     void AddToPlayerGroup();
     void SetOwner(Player* pOwner);
+
+    bool TryApplyPaladinAura(std::string const& messageLower, std::string* outChosenAuraName = nullptr);
 
     bool CanTryToCastSpell(Unit const* pTarget, SpellEntry const* pSpellEntry) const final;
     Player* GetPartyLeader() const;
@@ -145,7 +149,9 @@ public:
     bool m_isStaying = false;
     bool m_leaderReleased = false;
     bool m_isBuffing = false;
+    SpellEntry const* m_paladinAuraPreference = nullptr;
 
+    void ApplySavedPaladinAuraPreference();
     void SendPartyChat(const char* msg, uint32 delay = 0);
     void SetChatCooldown(uint32 seconds);
 };

@@ -104,6 +104,8 @@ public:
     Unit* SelectHealTarget(float selfHealPercent = 100.0f, float groupHealPercent = 100.0f) const;
     Unit* SelectPeriodicHealTarget(float selfHealPercent = 100.0f, float groupHealPercent = 100.0f) const;
     Player* SelectBuffTarget(SpellEntry const* pSpellEntry) const;
+    SpellEntry const* SelectPaladinBlessingSpellForTarget(Player const* pTarget) const;
+    Player* SelectPaladinBlessingBuffTarget(SpellEntry const*& outSpell) const;
     Player* SelectDispelTarget(SpellEntry const* pSpellEntry) const;
     bool IsValidBuffTarget(Unit const* pTarget, SpellEntry const* pSpellEntry) const;
     bool IsValidHealTarget(Unit const* pTarget, float healthPercent = 100.0f) const;
@@ -292,6 +294,16 @@ public:
             SpellEntry const* pAura;
             SpellEntry const* pSeal;
             SpellEntry const* pBlessingBuff;
+            SpellEntry const* pBlessingOfLight;
+            SpellEntry const* pBlessingOfMight;
+            SpellEntry const* pBlessingOfWisdom;
+            SpellEntry const* pBlessingOfKings;
+            SpellEntry const* pBlessingOfSanctuary;
+            SpellEntry const* pGreaterBlessingOfLight;
+            SpellEntry const* pGreaterBlessingOfMight;
+            SpellEntry const* pGreaterBlessingOfWisdom;
+            SpellEntry const* pGreaterBlessingOfKings;
+            SpellEntry const* pGreaterBlessingOfSanctuary;
             SpellEntry const* pBlessingOfProtection;
             SpellEntry const* pBlessingOfFreedom;
             SpellEntry const* pBlessingOfSacrifice;
@@ -313,9 +325,9 @@ public:
             SpellEntry const* pRepentance;
             SpellEntry const* pGeas;
             SpellEntry const* pDevotionAura;
+            SpellEntry const* pRetributionAura;
             SpellEntry const* pConcentrationAura;
             SpellEntry const* pSanctityAura;
-            SpellEntry const* pBlessingOfSanctuary;
             SpellEntry const* pValianceAura;
         } paladin;
         struct
