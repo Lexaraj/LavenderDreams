@@ -174,6 +174,7 @@ void CombatBotBaseAI::PopulateSpellData()
     SpellEntry const* pConcentrationAura = nullptr;
     SpellEntry const* pRetributionAura = nullptr;
     SpellEntry const* pSanctityAura = nullptr;
+    SpellEntry const* pValianceAura = nullptr;
     SpellEntry const* pShadowResistanceAura = nullptr;
     SpellEntry const* pFrostResistanceAura = nullptr;
     SpellEntry const* pFireResistanceAura = nullptr;
@@ -364,6 +365,11 @@ void CombatBotBaseAI::PopulateSpellData()
                 {
                     if (IsHigherRankSpell(pSanctityAura))
                         pSanctityAura = pSpellEntry;
+                }
+                else if (pSpellEntry->SpellName[0].find("Valiance Aura") != std::string::npos)
+                {
+                    if (IsHigherRankSpell(pValianceAura))
+                        pValianceAura = pSpellEntry;
                 }
                 else if (pSpellEntry->SpellName[0].find("Shadow Resistance Aura") != std::string::npos)
                 {
@@ -1772,6 +1778,11 @@ void CombatBotBaseAI::PopulateSpellData()
                 if (!auras.empty())
                     m_spells.paladin.pAura = SelectRandomContainerElement(auras);
             }
+            m_spells.paladin.pDevotionAura = pDevotionAura;
+            m_spells.paladin.pRetributionAura = pRetributionAura;
+            m_spells.paladin.pConcentrationAura = pConcentrationAura;
+            m_spells.paladin.pSanctityAura = pSanctityAura;
+            m_spells.paladin.pValianceAura = pValianceAura;
             break;
         }
         case CLASS_SHAMAN:

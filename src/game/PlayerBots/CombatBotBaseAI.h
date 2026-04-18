@@ -325,6 +325,7 @@ public:
             SpellEntry const* pRepentance;
             SpellEntry const* pGeas;
             SpellEntry const* pDevotionAura;
+            SpellEntry const* pRetributionAura;
             SpellEntry const* pConcentrationAura;
             SpellEntry const* pSanctityAura;
             SpellEntry const* pValianceAura;
