@@ -41,6 +41,7 @@ set (SCRIPTS_SRCS
     custom/custom_creatures.cpp
     custom/event_attack_city.cpp
     custom/gmisland.cpp
+    custom/lavender_stone.cpp
     custom/npc_escort.cpp
     custom/npc_j_eevee.cpp
     eastern_kingdoms/alterac_mountains/alterac_mountains.cpp
