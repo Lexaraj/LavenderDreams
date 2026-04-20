@@ -16,8 +16,10 @@
 
 #include "scriptPCH.h"
 #include "custom.h"
+#include "lavender_stone.h"
 
 void AddSC_zero_scripts()
 {
     AddSC_custom_creatures();
+    AddSC_lavender_stone();
 }
