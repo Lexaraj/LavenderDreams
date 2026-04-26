@@ -2079,6 +2079,13 @@ void PartyBotAI::UpdateInCombatAI()
                     }
                 }
             }
+
+            // Make sure we are facing the target
+            if (IsValidHostileTarget(pVictim) && !me->HasInArc(pVictim, 2 * M_PI_F / 3) && !me->IsMoving())
+            {
+                me->SetInFront(pVictim);
+                me->SendMovementPacket(MSG_MOVE_SET_FACING, false);
+            }
         }
         else if (m_role == ROLE_MELEE_DPS)
             RepositionMeleeDps();

@@ -1,29 +1,41 @@
 #include "lavender_stone.h"
 
-bool GossipSelect_lavender_stone(Player* player, GameObject* go, uint32 sender, uint32 action)
+bool GossipHello_lavender_stone(Player* player, GameObject* go)
 {
-    player->PlayerTalkClass->ClearMenus();
+    if (go->GetEntry() != MEETING_STONE_BRD)
+        return false;
 
-    switch (go->GetEntry())
+    player->PlayerTalkClass->ClearMenus();
+    player->ADD_GOSSIP_ITEM(5, "Clear raid lockout for Molten Core", GOSSIP_SENDER_MAIN, GOSSIP_ACT_CLEAR_MC);
+    player->ADD_GOSSIP_ITEM(5, "Clear raid lockout for Blackwing Lair", GOSSIP_SENDER_MAIN, GOSSIP_ACT_CLEAR_BWL);
+    player->SEND_GOSSIP_MENU(85000, go->GetObjectGuid());
+    return true;
+}
+
+bool GossipSelect_lavender_stone(Player* player, GameObject* go, uint32 /*sender*/, uint32 action)
+{
+    if (go->GetEntry() == MEETING_STONE_BRD)
     {
-        case MEETING_STONE_BRD:
+        if (action == GOSSIP_ACT_CLEAR_MC)
+        {
             if (ClearLockout(player, MAP_ID_MC))
+            {
                 player->GetSession()->SendNotification("Molten Core lockout cleared");
                 player->PSendSysMessage("Molten Core lockout cleared.");
-            break;
-        case MEETING_STONE_BRS:
+            }
+        }
+        else if (action == GOSSIP_ACT_CLEAR_BWL)
+        {
             if (ClearLockout(player, MAP_ID_BWL))
+            {
                 player->GetSession()->SendNotification("Blackwing Lair lockout cleared");
                 player->PSendSysMessage("Blackwing Lair lockout cleared.");
-            break;
-        default:
-            player->GetSession()->SendNotification("Unknown meeting stone");
+            }
+        }
     }
 
     player->CLOSE_GOSSIP_MENU();
-            
-
-    return false;
+    return true;
 }
 
 bool ClearLockout(Player* player, uint32 mapid)
@@ -58,6 +70,7 @@ void AddSC_lavender_stone()
 {
     Script* pNewScript = new Script;
     pNewScript->Name = "lavender_stone";
+    pNewScript->pGOGossipHello = &GossipHello_lavender_stone;
     pNewScript->pGOGossipSelect = &GossipSelect_lavender_stone;
     pNewScript->RegisterSelf();
 }

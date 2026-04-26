@@ -7,7 +7,11 @@
 #define MAP_ID_MC 409
 #define MAP_ID_BWL 469
 
+uint32 const GOSSIP_ACT_CLEAR_MC  = GOSSIP_ACTION_INFO_DEF;
+uint32 const GOSSIP_ACT_CLEAR_BWL = GOSSIP_ACTION_INFO_DEF + 1;
 
+
+bool GossipHello_lavender_stone(Player* player, GameObject* go);
 
 bool GossipSelect_lavender_stone(Player* player, GameObject* go, uint32 sender, uint32 action);
 
