@@ -2081,7 +2081,7 @@ void PartyBotAI::UpdateInCombatAI()
             }
 
             // Make sure we are facing the target
-            if (IsValidHostileTarget(pVictim) && !me->HasInArc(pVictim, 2 * M_PI_F / 3) && !me->IsMoving())
+            if (pVictim && IsValidHostileTarget(pVictim) && !me->HasInArc(pVictim, 2 * M_PI_F / 3) && !me->IsMoving())
             {
                 me->SetInFront(pVictim);
                 me->SendMovementPacket(MSG_MOVE_SET_FACING, false);
