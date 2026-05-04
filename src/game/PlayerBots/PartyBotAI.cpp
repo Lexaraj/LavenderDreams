@@ -403,7 +403,14 @@ bool PartyBotAI::AttackStart(Unit* pVictim)
         {
             if (GetRole() == ROLE_MELEE_DPS)
                 RepositionMeleeDps();
-
+            
+            if (GetRole() == ROLE_TANK)
+            {
+                me->SetInFront(pVictim);
+                me->SendMovementPacket(MSG_MOVE_SET_FACING, false);
+                me->GetMotionMaster()->MoveChase(pVictim);
+                me->Attack(pVictim, true);
+            }
         } else {
             me->GetMotionMaster()->Clear();
             me->GetMotionMaster()->MoveIdle();
@@ -2074,17 +2081,18 @@ void PartyBotAI::UpdateInCombatAI()
                 {
                     if (CanTryToCastSpell(pVictim, pSpellEntry))
                     {
-                        if (DoCastSpell(pVictim, pSpellEntry) == SPELL_CAST_OK)
-                            return;
+                        DoCastSpell(pVictim, pSpellEntry);
                     }
                 }
             }
 
-            // Make sure we are facing the target
+            // Make sure we dont get stuck
             if (pVictim && IsValidHostileTarget(pVictim) && !me->HasInArc(pVictim, 2 * M_PI_F / 3) && !me->IsMoving())
             {
                 me->SetInFront(pVictim);
                 me->SendMovementPacket(MSG_MOVE_SET_FACING, false);
+                me->GetMotionMaster()->MoveChase(pVictim);
+                me->Attack(pVictim, true);
             }
         }
         else if (m_role == ROLE_MELEE_DPS)
