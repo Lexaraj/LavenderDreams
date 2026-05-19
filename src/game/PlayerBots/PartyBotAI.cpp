@@ -1973,6 +1973,7 @@ void PartyBotAI::UpdateAI(uint32 const diff)
                         if (!isMeleeDpsOrTank)
                             me->SetCasterChaseDistance(chaseDistance);
 
+                        me->SetWalk(false);
                         me->GetMotionMaster()->MoveChase(pVictim, chaseDistance);
                         break;
                 }
@@ -4879,7 +4880,7 @@ void PartyBotAI::RepositionMeleeDps()
             
             // Update the ground position and move to the new position
             me->UpdateGroundPositionZ(newX, newY, newZ);
-            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, me->GetAngle(pVictim));
+            me->GetMotionMaster()->MovePoint(0, newX, newY, newZ, MOVE_PATHFINDING | MOVE_RUN_MODE | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, me->GetAngle(pVictim));
         }
     }
 }
@@ -4977,7 +4978,7 @@ bool PartyBotAI::SafelyMoveTo(float x, float y, float z, float angle)
     
     // Update the ground position and move to the new position
     me->UpdateGroundPositionZ(x, y, z);
-    me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, angle);
+    me->GetMotionMaster()->MovePoint(0, x, y, z, MOVE_PATHFINDING | MOVE_RUN_MODE | MOVE_EXCLUDE_STEEP_SLOPES, 0.0f, angle);
     return true;
 }
 
