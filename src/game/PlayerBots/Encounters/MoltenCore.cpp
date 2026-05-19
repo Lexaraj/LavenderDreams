@@ -164,7 +164,7 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                                 pPlayer->GetVictim() != memberTarget)
                             {
                                 pBot->SendPartyChat(("Assisting " + std::string(member->GetName()) + " on lava spawn").c_str());
-                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
+                                pPlayer->Attack(memberTarget, pBot->GetRole() == ROLE_MELEE_DPS);
                                 assist = true;
                                 break;
                             }
@@ -181,7 +181,7 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                     pPlayer->GetVictim() != firstAvailableSpawn)
                 {
                     pBot->SendPartyChat("Focusing on lava spawn!");
-                    pPlayer->SetTargetGuid(firstAvailableSpawn->GetObjectGuid());
+                    pPlayer->Attack(firstAvailableSpawn, pBot->GetRole() == ROLE_MELEE_DPS);
                 }
             }
         }
@@ -616,7 +616,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
         {
             pPlayer->GetMotionMaster()->Clear();
             pPlayer->GetMotionMaster()->MoveIdle();
-            return false;
+            return pBot->GetRole() == ROLE_HEALER;
         }
         else
         {
@@ -649,7 +649,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
             if ((pBot->GetRole() == ROLE_HEALER || pBot->GetRole() == ROLE_RANGE_DPS) &&
                 !pBot->IsStaying())
             {
-                if (pPlayer->GetDistance(baron) < 25.0f && 
+                if (pPlayer->GetDistance(baron) < 30.0f && 
                 !pPlayer->IsMoving() && !pPlayer->IsNonMeleeSpellCasted())
                 {
                     pPlayer->GetMotionMaster()->MoveDistance(baron, 30.0f);
@@ -659,7 +659,8 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
                 // Ensure we're facing the boss
                 pPlayer->SetCasterChaseDistance(32.0f);
                 pPlayer->GetMotionMaster()->MoveChase(baron, 30.0f, frand(0, M_PI / 2));
-                pBot->AttackStart(baron);                
+                if (pBot->GetRole() != ROLE_HEALER)
+                    pBot->AttackStart(baron);
             }
         }
     }
@@ -705,7 +706,7 @@ bool PartyBotEncounters_MC::MajordomoEncounter(PartyBotAI* pBot)
         return true;
 
     // Move out of the hot coals
-    if (pPlayer->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE))
+    if (pPlayer->GetDistance2d(736.287109, -1176.706421) < 10.0f)
     {
         pBot->SendPartyChat("Yikes McGavin that's hot!");
         pPlayer->GetMotionMaster()->MoveDistance(pPlayer, 15.0f);
