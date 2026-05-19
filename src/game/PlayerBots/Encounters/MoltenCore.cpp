@@ -616,7 +616,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
         {
             pPlayer->GetMotionMaster()->Clear();
             pPlayer->GetMotionMaster()->MoveIdle();
-            return false;
+            return pBot->GetRole() == ROLE_HEALER;
         }
         else
         {
@@ -649,7 +649,7 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
             if ((pBot->GetRole() == ROLE_HEALER || pBot->GetRole() == ROLE_RANGE_DPS) &&
                 !pBot->IsStaying())
             {
-                if (pPlayer->GetDistance(baron) < 25.0f && 
+                if (pPlayer->GetDistance(baron) < 30.0f && 
                 !pPlayer->IsMoving() && !pPlayer->IsNonMeleeSpellCasted())
                 {
                     pPlayer->GetMotionMaster()->MoveDistance(baron, 30.0f);
@@ -659,7 +659,8 @@ bool PartyBotEncounters_MC::GeddonEncounter(PartyBotAI* pBot)
                 // Ensure we're facing the boss
                 pPlayer->SetCasterChaseDistance(32.0f);
                 pPlayer->GetMotionMaster()->MoveChase(baron, 30.0f, frand(0, M_PI / 2));
-                pBot->AttackStart(baron);                
+                if (pBot->GetRole() != ROLE_HEALER)
+                    pBot->AttackStart(baron);
             }
         }
     }
