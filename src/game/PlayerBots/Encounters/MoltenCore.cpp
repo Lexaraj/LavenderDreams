@@ -706,7 +706,7 @@ bool PartyBotEncounters_MC::MajordomoEncounter(PartyBotAI* pBot)
         return true;
 
     // Move out of the hot coals
-    if (pPlayer->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE))
+    if (pPlayer->GetDistance2d(736.287109, -1176.706421) < 10.0f)
     {
         pBot->SendPartyChat("Yikes McGavin that's hot!");
         pPlayer->GetMotionMaster()->MoveDistance(pPlayer, 15.0f);
