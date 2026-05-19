@@ -164,7 +164,7 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                                 pPlayer->GetVictim() != memberTarget)
                             {
                                 pBot->SendPartyChat(("Assisting " + std::string(member->GetName()) + " on lava spawn").c_str());
-                                pPlayer->SetTargetGuid(memberTarget->GetObjectGuid());
+                                pPlayer->Attack(memberTarget, pBot->GetRole() == ROLE_MELEE_DPS);
                                 assist = true;
                                 break;
                             }
@@ -181,7 +181,7 @@ bool PartyBotEncounters_MC::TrashEncounter(PartyBotAI* pBot)
                     pPlayer->GetVictim() != firstAvailableSpawn)
                 {
                     pBot->SendPartyChat("Focusing on lava spawn!");
-                    pPlayer->SetTargetGuid(firstAvailableSpawn->GetObjectGuid());
+                    pPlayer->Attack(firstAvailableSpawn, pBot->GetRole() == ROLE_MELEE_DPS);
                 }
             }
         }
