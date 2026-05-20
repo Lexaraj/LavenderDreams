@@ -1,8 +1,7 @@
 #include "BlackwingLair.h"
+#include "Spells/SpellAuras.h"
+#include "Spells/SpellMgr.h"
 #include "PlayerBots/PartyBotChat.h"
-#include "AI/ScriptedInstance.h"
-#include "Group/Group.h"
-
 
 void PartyBotEncounters_BWL::ResetEncounterVars()
 {
@@ -260,5 +259,55 @@ bool PartyBotEncounters_BWL::ChromaggusEncounter(PartyBotAI* pBot)
 
 bool PartyBotEncounters_BWL::NefarianEncounter(PartyBotAI* pBot)
 {
+    Player* pPlayer = pBot->me;
+    if (!pPlayer)
+        return true;
+
+    if (pPlayer->GetClass() == CLASS_PRIEST && pBot->GetRole() == ROLE_HEALER)
+    {
+        // Corrupted healing: only Power Word: Shield and Renew
+        if (pPlayer->HasAura(SPELL_CORRUPTED_HEALING))
+        {
+            if (pBot->m_spells.priest.pPowerWordShield &&
+                pBot->CanTryToCastSpell(pPlayer, pBot->m_spells.priest.pPowerWordShield))
+            {
+                pBot->DoCastSpell(pPlayer, pBot->m_spells.priest.pPowerWordShield);
+            }
+
+            if (Unit* pTarget = pBot->SelectPeriodicHealTarget(80.0f, 90.0f))
+                pBot->HealInjuredTargetPeriodic(pTarget);
+
+            return false;
+        }
+
+        // Direct heals: Heal (rank 4) or Greater Heal (rank 2) only
+        if (Unit* pTarget = pBot->SelectHealTarget(60.0f, 85.0f))
+        {
+            SpellEntry const* pGreaterHeal = sSpellMgr.GetSpellEntry(SPELL_GREATER_HEAL_R2);
+            SpellEntry const* pHeal = sSpellMgr.GetSpellEntry(SPELL_HEAL_R4);
+
+            SpellEntry const* pHealSpell = (pTarget->GetHealthPercent() < 70.0f) ? pGreaterHeal : pHeal;
+            if (!pHealSpell || !pBot->CanTryToCastSpell(pTarget, pHealSpell))
+                pHealSpell = (pHealSpell == pGreaterHeal) ? pHeal : pGreaterHeal;
+
+            if (pHealSpell && pBot->CanTryToCastSpell(pTarget, pHealSpell))
+                pBot->DoCastSpell(pTarget, pHealSpell);
+        }
+        else
+        {
+            // wand for mana
+            if(Unit* pTarget = pBot->SelectAttackTarget(pPlayer))
+            {
+                if (pTarget->GetEntry() == NPC_NEFARIAN)
+                {
+                    SpellEntry const* pShootWand = sSpellMgr.GetSpellEntry(SPELL_SHOOT_WAND);
+                    pBot->DoCastSpell(pTarget, pShootWand);
+                }
+            }
+        }
+
+        return false;
+    }
+
     return true;
 }
